@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.1.3
+// @version      0.2.0
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -38,6 +38,8 @@ var croak = {
   hideEntry:      { value: GM_getValue("hideEntry", 1),      query: "Hide entered giveaways?", opt: ["Yes", "No"] },
   oneHide:        { value: GM_getValue("oneHide", 0),        query: "Skip confirmation when adding games to hidden filter?", opt: ["Yes", "No"] },
   winPercent:     { value: GM_getValue("winPercent", 1),     query: "Show giveaway win percentage?", opt: ["Yes", "No"] },
+  searchSame:     { value: GM_getValue("searchSame", 1),     query: "Show buttons to quickly search for similar giveaways?", opt: ["Yes", "No"] },
+  searchNav:      { value: GM_getValue("searchNav", 0),      query: "Show the giveaway search bar in the top navigation?", opt: ["Yes", "No"] },
   newBadges:      { value: GM_getValue("newBadges", 1),      query: "Show additional giveaway badges?", opt: ["Yes", "No"] },
   colorBadges:    { value: GM_getValue("colorBadges", 1),    query: "Recolor standard giveaway badges?", opt: ["Yes", "No"] },
 //   gridView:       { value: GM_getValue("gridView", 0),       query: "Show giveaways in a grid view?", opt: ["Yes", "No"] },
@@ -280,6 +282,7 @@ var frog = {
           //after wiping the page we need to reapply relevant custom settings
           window.setTimeout(function() {
             frog.settings.injectMenu(true);
+            frog.giveaways.injectNavSearch();
             
             frog.fixedElements.header();
             frog.fixedElements.sidebar();
@@ -528,11 +531,46 @@ var frog = {
       });
     },
     injectSearch: function($doc) {
+      if (!croak.searchSame.value) { return; }
+      
       $.each($doc.find(".giveaway__heading"), function(i, heading) {
         var $heading = $(heading);
-        $("<a/>").addClass("giveaway__icon").html("<i class='fa fa-search-plus'></i>").attr("title", "Search for more like this")
+        $("<a/>").addClass("giveaway__icon").html("<i class='fa fa-search-plus'></i>").attr("title", "Find similar giveaways")
           .attr("href", "/giveaways/search?q=" + $heading.find(".giveaway__heading__name").html()).appendTo($heading);
       });
+      
+      if (~location.href.indexOf("/giveaway/")) {
+        GM_addStyle(".sidebar__shortcut-inner-wrap div{ padding: 0; } " + 
+                   ".sidebar__shortcut-inner-wrap .sidebar__error{ border-color: #f0d1dc #e5bccc #d9a7ba #ebbecf; }");
+        
+        var $side = $(".sidebar__outer-wrap");
+        var $entry = $side.children().first().detach();
+        if (!$entry.hasClass("sidebar__error")) {
+          $entry.css("background-image", "none").css("border", "none");
+        } else {
+          frog.helpers.applyGradients($entry, "#f7edf1 0%, #e6d9de 100%");
+        }
+        
+        $("<div/>").addClass("sidebar__shortcut-inner-wrap")
+          .append($("<a/>").addClass("sidebar__entry-loading").css("max-width", "33%").html("<i class='fa fa-search'></i> Find Similar")
+                 .attr("href", "/giveaways/search?q=" + $(".featured__heading__medium").html()))
+          .append($entry)
+          .appendTo($("<div/>").addClass("sidebar__shortcut-outer-wrap").prependTo($side))
+      }
+    },
+    injectNavSearch: function() {
+      if (!croak.searchNav.value) { return; }
+      
+      var $search = $("<div/>").addClass("sidebar__search-container").css("margin", "0 5px 0 0").css("height", "inherit")
+        .append($("<input class='sidebar__search-input' placeholder='Search Giveaways...' value='' type='text' />")
+                .on("keypress", function(ev) {
+                  if (ev.which === 13) {
+                    location.href = "/giveaways/search?q="+ $(this).val();
+                    ev.stopImmediatePropagation();
+                  }
+                }))
+        .append("<i class='fa fa-search'></i>");
+      $(".nav__left-container").prepend($search);
     },
     hideEntered: function($doc) {
       if (!croak.hideEntry.value || ~location.href.indexOf("/giveaways/won")) { return; } //exclude own won list
@@ -964,6 +1002,7 @@ frog.loading.points();
 frog.giveaways.injectFlags.all($document);
 frog.giveaways.injectChance($document);
 frog.giveaways.injectSearch($document);
+frog.giveaways.injectNavSearch();
 frog.giveaways.hideEntered($document);
 frog.giveaways.easyHide($document);
 frog.giveaways.gridForm();

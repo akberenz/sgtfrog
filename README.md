@@ -12,6 +12,8 @@ Configurable options include:
 * Hide entered giveaways
 * Skip confirmation dialog when hiding games
 * Show the chance of winning each giveaway
+* Add search buttons to quickly search for similar titles
+* Add search box to navigation to find giveaways from any page
 * Add additional badges to giveaway listings (Recent and Wishlist)
 * Recolor existing badges to increase distinction
 * Hide 'My Giveaways' section on sidebar (Still available under navigation dropdown)
@@ -23,7 +25,6 @@ Configurable options include:
 
 Static Options include:
 * Allow featured giveaways section to be re-collapsed after expanding
-* Add search icon next to giveaway game name's to quickly search for similar titles
 
 
 Report bugs or request a feature under the 'Issues' tab.
