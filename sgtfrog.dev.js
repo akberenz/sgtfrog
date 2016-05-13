@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.2.0
+// @version      0.2.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -544,7 +544,7 @@ var frog = {
                    ".sidebar__shortcut-inner-wrap .sidebar__error{ border-color: #f0d1dc #e5bccc #d9a7ba #ebbecf; }");
         
         var $side = $(".sidebar__outer-wrap");
-        var $entry = $side.children().first().detach();
+        var $entry = $side.children().first().not(".sidebar__mpu").detach();
         if (!$entry.hasClass("sidebar__error")) {
           $entry.css("background-image", "none").css("border", "none");
         } else {
@@ -552,7 +552,7 @@ var frog = {
         }
         
         $("<div/>").addClass("sidebar__shortcut-inner-wrap")
-          .append($("<a/>").addClass("sidebar__entry-loading").css("max-width", "33%").html("<i class='fa fa-search'></i> Find Similar")
+          .append($("<a/>").addClass("sidebar__entry-loading").css("max-width", ($entry.length>0? "33%":"100%")).html("<i class='fa fa-search'></i> Find Similar")
                  .attr("href", "/giveaways/search?q=" + $(".featured__heading__medium").html()))
           .append($entry)
           .appendTo($("<div/>").addClass("sidebar__shortcut-outer-wrap").prependTo($side))
