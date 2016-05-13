@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.1.1
+// @version      0.1.2
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -203,13 +203,17 @@ var frog = {
       var $menu = $("<div/>").addClass("nav__button-container");
       $("<a/>").addClass("nav__button nav__buton--is-dropdown").attr("href", "/ąccount/settings/ribbit")
         .html("Sgt Frog").appendTo($menu);
-      $("<div/>").addClass("nav__button nav__button--is-dropdown-arrow")
-        .html("<i class='fa fa-angle-down'></i>").appendTo($menu);
+      $("<div/>").addClass("nav__button nav__button--is-dropdown-arrow").html("<i class='fa fa-angle-down'></i>").appendTo($menu)
+        .on("click", function(e) {
+          var t = $(this).hasClass("is-selected");
+          $("nav .nav__button").removeClass("is-selected"), $("nav .nav__relative-dropdown").addClass("is-hidden"), t || $(this).addClass("is-selected").siblings(".nav__relative-dropdown").removeClass("is-hidden"), e.stopImmediatePropagation()
+        });
+      
       var $drop = $("<div/>").addClass("nav__relative-dropdown is-hidden").appendTo($menu);
       $("<div/>").addClass("nav__absolute-dropdown")
         .append(frog.helpers.makeTopLink("/ąccount/settings/ribbit", "Settings", "Adjust tool functionality.", "gears", "grey"))
         .append(frog.helpers.makeTopLink("https://github.com/bberenz/sgtfrog/issues", "Feedback", "Report an issue or request a feature.", "github", "green"))
-        .append(frog.helpers.makeTopLink("https://en.wikipedia.org/wiki/Chicken_or_the_egg", "Discussion", "View the SteamGifts discussion thread.", "square-o", "blue"))
+        .append(frog.helpers.makeTopLink("https://www.steamgifts.com/discussion/4C3Cl/userscript-steamgifts-tinkerer-featuring-refined-ostensible-gain", "Discussion", "View the SteamGifts discussion thread.", "square-o", "blue"))
         .appendTo($drop);
       
       $(".nav__right-container").find(".nav__button-container:not(.nav__button-container--notification)").last().before($menu);
@@ -270,10 +274,9 @@ var frog = {
           frog.logging.debug("Creation complete");
           
           //after wiping the page we need to reapply relevant custom settings
-          frog.settings.injectMenu(true);
-          
-          //css hasn't caught up yet
           window.setTimeout(function() {
+            frog.settings.injectMenu(true);
+            
             frog.fixedElements.header();
             frog.fixedElements.sidebar();
             frog.fixedElements.footer();
