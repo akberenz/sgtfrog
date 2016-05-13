@@ -27,3 +27,6 @@ Static Options include:
 
 
 Report bugs or request a feature under the 'Issues' tab.
+
+
+__Keroro icon is copyright (C) Mine Yoshizaki. Used _without_ permission and not subjected to the script's license.__
