@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.2.1
+// @version      0.2.2
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -204,7 +204,7 @@ var frog = {
       //inject button in nav
       var $menu = $("<div/>").addClass("nav__button-container");
       $("<a/>").addClass("nav__button nav__buton--is-dropdown").attr("href", "/ąccount/settings/ribbit")
-        .html("Sgt Frog").appendTo($menu);
+        .html("SGT frog").appendTo($menu);
       $("<div/>").addClass("nav__button nav__button--is-dropdown-arrow").html("<i class='fa fa-angle-down'></i>").appendTo($menu)
         .on("click", function(e) {
             //chrome has problems applying sg's event handlers, so we explicitly copy them
@@ -222,7 +222,7 @@ var frog = {
       $(".nav__right-container").find(".nav__button-container:not(.nav__button-container--notification)").last().before($menu);
       
       //inject link on account settings
-      var $link = frog.helpers.makeSideLink("/ąccount/settings/ribbit", "Sgt Frog");
+      var $link = frog.helpers.makeSideLink("/ąccount/settings/ribbit", "SGT frog");
       $(".sidebar__navigation").find("a[href='/account/settings/sales']").parent().after($link);
       if (isActive) {
         $link.addClass("is-selected");
@@ -720,7 +720,6 @@ var frog = {
       
       var page = frog.helpers.fromQuery("page");
       if (page == undefined) { page = 1; }
-      frog.loading.addSpinner($(".pagination"));
       $(".widget-container").find(".page__heading").first().after($(".pagination").detach());
 
       var loading = false;
@@ -738,6 +737,7 @@ var frog = {
             loc += "/search?";
           }
 
+          frog.loading.addSpinner($(".giveaway__row-outer-wrap").last());
           frog.logging.info("Loading next page: "+ page);
           frog.logging.debug(loc +"&page="+ page);
 
@@ -764,6 +764,7 @@ var frog = {
               .append($paging).append($nextGiveaways);
             
             loading = false;
+            frog.loading.removeSpinner();
           });
         }
       });
@@ -784,7 +785,6 @@ var frog = {
       var page = frog.helpers.fromQuery("page");
       if (page == undefined) { page = 1; }
       var lastPage = $(".pagination__navigation").children().last().attr('data-page-number');
-      frog.loading.addSpinner($(".pagination"));
       $(".page__heading").last().after($(".pagination").detach());
 
       var loading = false;
@@ -801,6 +801,7 @@ var frog = {
               loc += "/search?";
             }
             
+            frog.loading.addSpinner($(".comments").last());
             frog.logging.info("Loading next page: "+ page +"/"+ lastPage);
             frog.logging.debug(loc +"&page="+ page);
             
@@ -819,15 +820,14 @@ var frog = {
                 .append($data.find(".comments").last().children().detach());
               
               loading = false;
+              frog.loading.removeSpinner();
             });
-          } else {
-            frog.loading.removeSpinner();
           }
         }
       });
     },
     addSpinner: function($afterElm) {
-      GM_addStyle(".pagination__loader{ text-align: center; } " +
+      GM_addStyle(".pagination__loader{ text-align: center; margin-top: 1em; } " +
                   ".pagination__loader .fa{ font-size: 2em; } ");
       
       $afterElm.after($("<div/>").addClass("pagination__loader").html("<i class='fa fa-spin fa-circle-o-notch'></i>"));
