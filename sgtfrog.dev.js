@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.1.2
+// @version      0.1.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -205,6 +205,7 @@ var frog = {
         .html("Sgt Frog").appendTo($menu);
       $("<div/>").addClass("nav__button nav__button--is-dropdown-arrow").html("<i class='fa fa-angle-down'></i>").appendTo($menu)
         .on("click", function(e) {
+            //chrome has problems applying sg's event handlers, so we explicitly copy them
           var t = $(this).hasClass("is-selected");
           $("nav .nav__button").removeClass("is-selected"), $("nav .nav__relative-dropdown").addClass("is-hidden"), t || $(this).addClass("is-selected").siblings(".nav__relative-dropdown").removeClass("is-hidden"), e.stopImmediatePropagation()
         });
@@ -232,8 +233,10 @@ var frog = {
         frog.logging.info("Creating custom settings page");
         
         GM_addStyle("body{ background-image: none; background-color: #95A4C0; }");
-        $("html").empty();
         
+        var $dark = $("style").detach(); //compatibility with dark theme
+        $("html").empty();
+     
         //copy an existing page to match layout
         $.ajax({
           method: "GET",
@@ -246,6 +249,7 @@ var frog = {
             .append("<script src='https://cdn.steamgifts.com/js/minified.js'></script>");
           $("<body/>").appendTo("html")
             .append(data.substring(data.indexOf("<body>")+6, data.indexOf("</body>")));
+          $dark.appendTo("html");
           
           //re-skin
           $(".page__heading__breadcrumbs").children("a").last()
@@ -281,7 +285,7 @@ var frog = {
             frog.fixedElements.sidebar();
             frog.fixedElements.footer();
             $document.scroll();
-          }, 250);
+          }, 500);
         });
       }
     },
@@ -307,8 +311,9 @@ var frog = {
     header: function() {
       if (!croak.stickHead.value) { return; }
       
+      // !important on margin for compatibility with dark theme
       GM_addStyle("header.fixed{ position: fixed; top: 0; width: 100%; z-index: 100; } " +
-                  ".left-above{ margin-top: 39px; }");
+                  ".left-above{ margin-top: 39px !important; }");
 
       $("header").addClass("fixed");
 
@@ -465,7 +470,7 @@ var frog = {
         GM_addStyle(".giveaway__column--whitelist{ background-image: linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
                     "  background-image: -moz-linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
                     "  background-image: -webkit-linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
-                    "  color: #D81B60; }");
+                    "  color: #D81B60 !important; }");
       },
       group: function() {
         GM_addStyle(".giveaway__column--group{ background-image: linear-gradient(#DCEDC8 0%, #AED581 100%); " +
@@ -887,14 +892,15 @@ var frog = {
             });
           }
 
+          var $target = $(ev.target);
           var edge = 0;
-          if ((ev.target.offsetLeft + width) > window.innerWidth) {
+          if (($target.offset().left + width) > window.innerWidth) {
             edge = ev.target.offsetWidth - width;
           }
 
           $box.show()
-            .css("left", ev.target.offsetLeft - 1 - parseInt($parent.css("padding-left")) + edge)
-            .css("top", ev.target.offsetTop - 1 - parseInt($parent.css("padding-top")));
+            .css("left", $target.offset().left - 1 - parseInt($parent.css("padding-left")) + edge)
+            .css("top", $target.offset().top - 1 - parseInt($parent.css("padding-top")));
         }, 250);
       }, function() {
         window.clearTimeout(hoverTime);
