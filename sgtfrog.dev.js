@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.2.3
+// @version      0.2.4
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -911,7 +911,7 @@ var frog = {
               var $suspend = $data.find(".sidebar__suspension-time"),
                   $username = $("<div/>").addClass("featured__table__row__left").html($data.find(".featured__heading"));
               if ($suspend.length) {
-                $username.find(".featured__heading__medium").css("color", "#000").attr("title", "Suspension length: "+ $suspend.html());
+                $username.find(".featured__heading__medium").css("color", "#000").attr("title", "Suspension length: "+ $suspend.text());
               }
 
               var base = $data.find(".featured__outer-wrap--user").css("background-color"),
