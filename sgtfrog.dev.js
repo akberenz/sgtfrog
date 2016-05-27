@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.2.4
+// @version      0.2.5
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -486,7 +486,7 @@ var frog = {
       
       var chtml = function(entries, copies) {
         return "<i class='fa fa-bar-chart'></i> <span>" +
-            ((1 / entries) * copies * 100).toFixed(3) + "% chance</span>";
+            Math.min(100, (1 / entries) * copies * 100).toFixed(3) + "% chance</span>";
       };
 
       //inject on listing pages
@@ -690,6 +690,61 @@ var frog = {
       if (page && page > 1) {
         $(".comment__collapse-button").first().trigger("click");
       }
+    },
+    injectTimes: function($doc) {
+      if (!~location.href.indexOf("/discussion/") && !~location.href.indexOf("/trade/")) { return; }
+      
+      $.each($doc.find(".comment__actions"), function(i, elm) {
+        var $edit = $($(elm).children().first().children()[1]);
+        
+        if ($edit.length) {
+          var d,
+              pullDate = $edit.attr("title").replace(/Edited:/, ""),
+              time = pullDate.match(/(\w+ \d+, \d{4}|Yesterday|Today), (\d+):(\d{2})(am|pm)/i);          
+          if (time[1] === "Today" || time[1] === "Yesterday") {
+              d = new Date();
+              if (time[1] === "Yesterday") {
+                  d.setDate(d.getDate()-1);
+              }
+          } else {
+              d = new Date(time[1]);
+          }
+          d.setHours(+time[2] + ((+time[2] < 12 && time[4] == "pm")? 12:0), +time[3], 0, 0);
+          
+          frog.logging.debug(pullDate +"-->"+ d.toString());
+          
+          var show, interval, 
+              seconds = Math.floor((new Date() - d) / 1000);
+          var interval = Math.floor(seconds / 31622400);
+          if (interval > 1) {
+            show = interval + " year";
+          } else {
+            interval = Math.floor(seconds / 2678400);
+            if (interval > 1) {
+              show = interval + " month";
+            } else {
+              interval = Math.floor(seconds / 86400);
+              if (interval >= 1) {
+                show = interval + " day";
+              } else {
+                interval = Math.floor(seconds / 3600);
+                if (interval >= 1) {
+                  show = interval + " hour";
+                } else {
+                  interval = Math.floor(seconds / 60);
+                  if (interval >= 1) {
+                    show = interval + " minute";
+                  } else {
+                    show = seconds + " second";
+                  }
+                }
+              }
+            }
+          }
+          
+          $edit.html(" <strong>*Edited: "+ show + (interval==1? "":"s") +" ago</strong>");
+        }
+      });
     }
   },
   /*************************************************************************LOADING***/
@@ -812,6 +867,7 @@ var frog = {
               var $data = $(data);
               frog.users.profileHover($data);
               frog.users.listIndication($data);
+              frog.threads.injectTimes($data);
               
               var $paging = $data.find(".pagination");
               $paging.find(".pagination__navigation").html("Page " + page);
@@ -977,7 +1033,7 @@ var frog = {
   },
   /***********************************************************************POINTLESS***/
   pointless: {
-    kacode: function() {
+    kccode: function() {
       GM_addStyle("*{ direction: rtl; } ");
       $(".fa").addClass("fa-spin");
     }
@@ -1010,6 +1066,8 @@ frog.sidebar.removeMyGA();
 
 frog.giveaways.activeThreads.find();
 
+frog.threads.injectTimes($document);
+
 frog.sidebar.injectSGTools();
 frog.users.profileHover($document);
 frog.users.listIndication($document);
@@ -1029,7 +1087,7 @@ $document.on("keypress", function(event) {
   if (event.keyCode == kc[kcAt] || event.which == kc[kcAt]) {
     if (++kcAt == kc.length) {
       console.log('[RIBBIT] - Command received - Iniitiating sequence..');
-      frog.pointless.kacode();
+      frog.pointless.kccode();
     }
   } else {
     kcAt = 0;
