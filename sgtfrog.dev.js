@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.3.0
+// @version      0.3.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -421,17 +421,18 @@ var frog = {
           frog.giveaways.injectFlags.group();
         }
       },
-      wishlist: function($doc) {
+      wishlist: function($doc, hasStyle) {
           //FIXME - wrong position on grid view (occasionally)
         var $gives = $(".giveaway__row-outer-wrap");
         
         if ($gives.length > 0) {
-          GM_addStyle(".giveaway__column--wish{ background-image: linear-gradient(#FFFACF 0%, #FFF176 100%); " +
-                    "  background-image: -moz-linear-gradient(#FFFACF 0%, #FFF176 100%); " +
-                    "  background-image: -webkit-linear-gradient(#FFFACF 0%, #FFF176 100%); " +
-                    "  border-color: #EDCCBE #F0C2AF #DEAB95 #F2C4B1 !important; color: #F57F17; " +
-                    "  box-shadow: none !important; }");
-          
+          if (!hasStyle) {
+            GM_addStyle(".giveaway__column--wish{ background-image: linear-gradient(#FFFACF 0%, #FFF176 100%); " +
+                      "  background-image: -moz-linear-gradient(#FFFACF 0%, #FFF176 100%); " +
+                      "  background-image: -webkit-linear-gradient(#FFFACF 0%, #FFF176 100%); " +
+                      "  border-color: #EDCCBE #F0C2AF #DEAB95 #F2C4B1 !important; color: #F57F17; " +
+                      "  box-shadow: none !important; }");
+          }
 
           var $badge = $("<div/>").addClass("giveaway__column--wish").attr("title", "Wishlist");
           $("<i/>").addClass("fa fa-fw fa-star").appendTo($badge);
@@ -452,13 +453,15 @@ var frog = {
           });
         }
       },
-      recent: function($doc) {
-        GM_addStyle(".giveaway__column--new{ " +
-                      "  background-image: linear-gradient(#FFE0B2 0%, #FFB74D 100%); " +
-                      "  background-image: -moz-linear-gradient(#FFE0B2 0%, #FFB74D 100%); " +
-                      "  background-image: -webkit-linear-gradient(#FFE0B2 0%, #FFB74D 100%); " +
-                      "  border-color: #FFCCBC #FFAB91 #FF8A65 #FFAB91 !important; color: #BF360C; " +
-                      "  box-shadow: none !important; }");
+      recent: function($doc, hasStyle) {
+        if (!hasStyle) {
+          GM_addStyle(".giveaway__column--new{ " +
+                        "  background-image: linear-gradient(#FFE0B2 0%, #FFB74D 100%); " +
+                        "  background-image: -moz-linear-gradient(#FFE0B2 0%, #FFB74D 100%); " +
+                        "  background-image: -webkit-linear-gradient(#FFE0B2 0%, #FFB74D 100%); " +
+                        "  border-color: #FFCCBC #FFAB91 #FF8A65 #FFAB91 !important; color: #BF360C; " +
+                        "  box-shadow: none !important; }");
+        }
 
         var $badge = $("<div/>").addClass("giveaway__column--new").attr("title", "New");
           $("<i/>").addClass("fa fa-fw fa-fire").appendTo($badge);
@@ -544,7 +547,7 @@ var frog = {
         $(fga).children().first().after($chance);
       });
     },
-    injectSearch: function($doc) {
+    injectSearch: function($doc, hasStyle) {
       if (!croak.searchSame.value) { return; }
       
       $.each($doc.find(".giveaway__heading"), function(i, heading) {
@@ -554,8 +557,10 @@ var frog = {
       });
       
       if (~location.href.indexOf("/giveaway/")) {
-        GM_addStyle(".sidebar__shortcut-inner-wrap div{ padding: 0; } " + 
-                   ".sidebar__shortcut-inner-wrap .sidebar__error{ border-color: #f0d1dc #e5bccc #d9a7ba #ebbecf; }");
+        if (!hasStyle) {
+          GM_addStyle(".sidebar__shortcut-inner-wrap div{ padding: 0; } " + 
+                     ".sidebar__shortcut-inner-wrap .sidebar__error{ border-color: #f0d1dc #e5bccc #d9a7ba #ebbecf; }");
+        }
         
         var $side = $(".sidebar__navigation").parent();
         var $entry = $side.children().first().not(".sidebar__mpu").detach();
@@ -599,24 +604,26 @@ var frog = {
         }, 100);
       });
     },
-    gridForm: function($doc) {
+    gridForm: function($doc, hasStyle) {
       if (!croak.gridView.value || !frog.helpers.isGAlist()) { return; }
       
-      GM_addStyle(".pagination{ clear: both; } " +
-                    ".giveaway__row-outer-wrap{ width: 19%; margin-right: 1%; float: left; } " +
-                    ".giveaway__row-inner-wrap{ display: block; } " +
-                    ".global__image-outer-wrap--game-medium{ margin: 0 auto !important; } " + //important to override margins on :not(last)
-                    ".giveaway__heading{ display: block; text-align: center; } " +
-                    ".giveaway__heading:first-of-type{ height: auto; text-overflow: ellipsis; overflow: hidden; } " +
-                    ".giveaway__columns-full{ display: block; } " + 
-                    ".giveaway__columns-full > :not(:last-child){ margin: 0 0 5px 0; } " +
-                    ".giveaway__columns--badges{ margin-bottom: 5px; } " +
-                    ".giveaway__columns--badges > .giveaway__column--contributor-level:not(.giveaway__column--empty){ -webkit-box-flex: 1; -moz-box-flex: 1; -webkit-flex: 1; -ms-flex: 1; flex: 1; } " +
-                    ".giveaway__column--empty{ height: 26px; width: 0; padding: 0; margin: 0 !important; visibility: hidden; } " + //important to force no widths
-                    ".giveaway__links{ display: block; margin-top: 5px; } " + 
-                    ".giveaway__links a{ margin-right: 5px; } " + 
-                    ".pinned-giveaways__inner-wrap--minimized .giveaway__row-outer-wrap:nth-child(-n+5){ display: initial; } " +
-                    ".giveaway__row--empty{ clear: both; } ");
+      if (!hasStyle) {
+        GM_addStyle(".pagination{ clear: both; } " +
+                      ".giveaway__row-outer-wrap{ width: 19%; margin-right: 1%; float: left; } " +
+                      ".giveaway__row-inner-wrap{ display: block; } " +
+                      ".global__image-outer-wrap--game-medium{ margin: 0 auto !important; } " + //important to override margins on :not(last)
+                      ".giveaway__heading{ display: block; text-align: center; } " +
+                      ".giveaway__heading:first-of-type{ height: auto; text-overflow: ellipsis; overflow: hidden; } " +
+                      ".giveaway__columns-full{ display: block; } " + 
+                      ".giveaway__columns-full > :not(:last-child){ margin: 0 0 5px 0; } " +
+                      ".giveaway__columns--badges{ margin-bottom: 5px; } " +
+                      ".giveaway__columns--badges > .giveaway__column--contributor-level:not(.giveaway__column--empty){ -webkit-box-flex: 1; -moz-box-flex: 1; -webkit-flex: 1; -ms-flex: 1; flex: 1; } " +
+                      ".giveaway__column--empty{ height: 26px; width: 0; padding: 0; margin: 0 !important; visibility: hidden; } " + //important to force no widths
+                      ".giveaway__links{ display: block; margin-top: 5px; } " + 
+                      ".giveaway__links a{ margin-right: 5px; } " + 
+                      ".pinned-giveaways__inner-wrap--minimized .giveaway__row-outer-wrap:nth-child(-n+5){ display: initial; } " +
+                      ".giveaway__row--empty{ clear: both; } ");
+      }
       
       $doc.find(".giveaway__columns").addClass("giveaway__columns-full");
       $.each($doc.find(".giveaway__row-outer-wrap"), function(i,wrap) {
@@ -806,22 +813,24 @@ var frog = {
   /*************************************************************************LOADING***/
   loading: {
     everyNew: function($doc) {
-      //FIXME - adds muliple style sheets
-      frog.giveaways.injectFlags.wishlist($doc);
-      frog.giveaways.injectFlags.recent($doc);
+      frog.giveaways.injectFlags.wishlist($doc, true);
+      frog.giveaways.injectFlags.recent($doc, true);
       frog.giveaways.injectChance($doc);
-      frog.giveaways.injectSearch($doc);
+      frog.giveaways.injectSearch($doc, true);
       frog.giveaways.hideEntered($doc);
       frog.giveaways.easyHide($doc);
-      frog.giveaways.gridForm($doc);
-      frog.users.profileHover($doc);
-      frog.users.listIndication($doc);
+      frog.giveaways.gridForm($doc, true);
+      frog.users.profileHover($doc, true);
+      frog.users.listIndication($doc, true);
     },
     giveaways: function() {
       //avoid stepping on other loading pages
       if (!croak.loadGA.value || !frog.helpers.isGAlist()) {
         return;
       }
+      
+      GM_addStyle(".pagination__loader{ text-align: center; margin-top: 1em; } " +
+                  ".pagination__loader .fa{ font-size: 2em; } ");
       
       //FIXME - hide giveaway broken on appended pages
       
@@ -889,6 +898,9 @@ var frog = {
       frog.loading.comments();
     },
     comments: function() {
+      GM_addStyle(".pagination__loader{ text-align: center; margin-top: 1em; } " +
+                  ".pagination__loader .fa{ font-size: 2em; } ");
+        
       var page = frog.helpers.fromQuery("page");
       if (page == undefined) { page = 1; }
       var lastPage = $(".pagination__navigation").children().last().attr('data-page-number');
@@ -935,9 +947,6 @@ var frog = {
       });
     },
     addSpinner: function($afterElm) {
-      GM_addStyle(".pagination__loader{ text-align: center; margin-top: 1em; } " +
-                  ".pagination__loader .fa{ font-size: 2em; } ");
-      
       $afterElm.after($("<div/>").addClass("pagination__loader").html("<i class='fa fa-spin fa-circle-o-notch'></i>"));
     },
     removeSpinner: function() {
@@ -962,25 +971,27 @@ var frog = {
   },
   /***************************************************************************USERS***/
   users: {
-    profileHover: function($doc) {
+    profileHover: function($doc, hasStyle) {
       if (!croak.userDetails.value) { return; }
       
       var img = 64, pad = 5;
       var width = 360, height = 160;
-      GM_addStyle(".user-panel__outer-wrap{ position: absolute; width: "+ width +"px; height: "+ height +"px; color: #21262f; } " +
-                  ".user-panel__inner-wrap{ position: relative; width:100%; height: 100%; } " +
-                  ".user-panel__image{ position: absolute; top: 0; left: 0; width: "+ img +"px; height: "+ img +"px; " +
-                  "  border-radius: 5px; } " +
-                  ".user-panel__corner{ position: absolute; top: "+ (img+pad) +"px; bottom: 0; left: 0; right: "+ (width-(img+pad)) +"px; " +
-                  "  padding: 5px; background-color: #465670; border-radius: 3px 0 0 3px; } " +
-                  ".user-panel__corner .user-panel__icon-load{ font-size: 5em; color: rgba(255,255,255,0.6); } " +
-                  ".user-panel__corner .sidebar__shortcut-inner-wrap{ display: block; } " +
-                  ".user-panel__corner .sidebar__shortcut__whitelist{ margin: 0 0 5px 0; }" +
-                  ".user-panel__stats{ position: absolute; top: 0; bottom: 0; left: "+ (img+pad) +"px; right: 0; " +
-                  "  padding: 5px; background-color: #465670; border-radius: 3px 3px 3px 0; } " +
-                  ".user-panel__stats .featured__heading__medium{ font-size: 16px; } " +
-                  ".user-panel__stats .featured__heading{ margin-bottom: 0; } " +
-                  ".user-panel__stats .featured__table__column{ margin: 0; } ");
+      if (!hasStyle) {
+        GM_addStyle(".user-panel__outer-wrap{ position: absolute; width: "+ width +"px; height: "+ height +"px; color: #21262f; } " +
+                    ".user-panel__inner-wrap{ position: relative; width:100%; height: 100%; } " +
+                    ".user-panel__image{ position: absolute; top: 0; left: 0; width: "+ img +"px; height: "+ img +"px; " +
+                    "  border-radius: 5px; } " +
+                    ".user-panel__corner{ position: absolute; top: "+ (img+pad) +"px; bottom: 0; left: 0; right: "+ (width-(img+pad)) +"px; " +
+                    "  padding: 5px; background-color: #465670; border-radius: 3px 0 0 3px; } " +
+                    ".user-panel__corner .user-panel__icon-load{ font-size: 5em; color: rgba(255,255,255,0.6); } " +
+                    ".user-panel__corner .sidebar__shortcut-inner-wrap{ display: block; } " +
+                    ".user-panel__corner .sidebar__shortcut__whitelist{ margin: 0 0 5px 0; }" +
+                    ".user-panel__stats{ position: absolute; top: 0; bottom: 0; left: "+ (img+pad) +"px; right: 0; " +
+                    "  padding: 5px; background-color: #465670; border-radius: 3px 3px 3px 0; } " +
+                    ".user-panel__stats .featured__heading__medium{ font-size: 16px; } " +
+                    ".user-panel__stats .featured__heading{ margin-bottom: 0; } " +
+                    ".user-panel__stats .featured__table__column{ margin: 0; } ");
+      }
       
       var $box = $("<div/>").addClass("global__image-outer-wrap user-panel__outer-wrap").appendTo($("body")).hide();
       var $userbox = $("<div/>").addClass("user-panel__inner-wrap").appendTo($box);
@@ -1055,14 +1066,16 @@ var frog = {
         $box.hide();
       });
     },
-    listIndication: function($doc) {
+    listIndication: function($doc, hasStyle) {
       if (!croak.userLists.value || ~location.pathname.indexOf('/user/')) {
         return; //not active on user pages for obvious reasons
       }
       
-      //using !important selector on 'color' to override the :not(.comment__username--op) selector color
-      GM_addStyle("a.user__whitened{ background-color: #FFF; color: #2A2 !important; border-radius: 4px; padding: 2px 4px; text-shadow: none; } " +
-                  "a.user__blackened{ background-color: #000; color: #C55 !important; border-radius: 4px; padding: 2px 4px; text-shadow: none; } ");
+      if (!hasStyle) {
+        //using !important selector on 'color' to override the :not(.comment__username--op) selector color
+        GM_addStyle("a.user__whitened{ background-color: #FFF; color: #2A2 !important; border-radius: 4px; padding: 2px 4px; text-shadow: none; } " +
+                    "a.user__blackened{ background-color: #000; color: #C55 !important; border-radius: 4px; padding: 2px 4px; text-shadow: none; } ");
+      }
       
       frog.helpers.colorLists.getList("whitelist", function(whitened) {
         frog.logging.debug("Applying white to "+ whitened.length +" users");
