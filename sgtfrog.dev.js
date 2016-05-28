@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.2.5
+// @version      0.3.0
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -42,7 +42,7 @@ var croak = {
   searchNav:      { value: GM_getValue("searchNav", 0),      query: "Show the giveaway search bar in the top navigation?", opt: ["Yes", "No"] },
   newBadges:      { value: GM_getValue("newBadges", 1),      query: "Show additional giveaway badges?", opt: ["Yes", "No"] },
   colorBadges:    { value: GM_getValue("colorBadges", 1),    query: "Recolor standard giveaway badges?", opt: ["Yes", "No"] },
-//   gridView:       { value: GM_getValue("gridView", 0),       query: "Show giveaways in a grid view?", opt: ["Yes", "No"] },
+  gridView:       { value: GM_getValue("gridView", 0),       query: "Show giveaways in a grid view?", opt: ["Yes", "No"] },
   sideMine:       { value: GM_getValue("sideMine", 0),       query: "Hide 'My Giveaways' in the sidebar? (Still available under navigation dropdown)", opt: ["Yes", "No"] },
   activeThread:   { value: GM_getValue("activeThread", 2),   query: "Show the 'Active Discussions' section?", opt: ["Yes", "Sidebar", "No"] },
   collapseThread: { value: GM_getValue("collapseThread", 1), query: "Collapse original discussion post after first page?", opt: ["Yes", "No"] },
@@ -85,6 +85,14 @@ var frog = {
         urlParams[decode(match[1])] = decode(match[2]);
       }
       return urlParams[name];
+    },
+    isGAlist: function() {
+      return !(~location.href.indexOf("/trade")
+        || ~location.href.indexOf("/discussion")
+        || ~location.href.indexOf("/giveaway/")
+        || ~location.href.indexOf("/account/")
+        || ~location.href.indexOf("/archive")
+        || ~location.href.indexOf("/settings"));
     },
     //TODO - this can be combined into a single list loader
     wishingWell: {
@@ -414,6 +422,7 @@ var frog = {
         }
       },
       wishlist: function($doc) {
+          //FIXME - wrong position on grid view (occasionally)
         var $gives = $(".giveaway__row-outer-wrap");
         
         if ($gives.length > 0) {
@@ -432,8 +441,13 @@ var frog = {
             frog.logging.debug("Applying badges for "+ wishes.length +" wishes");
             
             $.each(wishes, function(i, wish) {
-              $doc.find("a[href='"+ wish +"']").parent().parent()
-                .find(".giveaway__column--width-fill").after($badge.clone());
+              var $gaBlock = $doc.find("a[href='"+ wish +"']").parent().parent();
+              var $block = $gaBlock.find(".giveaway__columns--badges");
+              if ($block.length) {
+                  $block.prepend($badge.clone());
+              } else {
+                $gaBlock.find(".giveaway__column--width-fill").after($badge.clone()); 
+              }
             });
           });
         }
@@ -586,9 +600,50 @@ var frog = {
       });
     },
     gridForm: function($doc) {
-//       if (!croak.gridView.value) { return; }
+      if (!croak.gridView.value || !frog.helpers.isGAlist()) { return; }
       
-      //TODO
+      GM_addStyle(".pagination{ clear: both; } " +
+                    ".giveaway__row-outer-wrap{ width: 19%; margin-right: 1%; float: left; } " +
+                    ".giveaway__row-inner-wrap{ display: block; } " +
+                    ".global__image-outer-wrap--game-medium{ margin: 0 auto !important; } " + //important to override margins on :not(last)
+                    ".giveaway__heading{ display: block; text-align: center; } " +
+                    ".giveaway__heading:first-of-type{ height: auto; text-overflow: ellipsis; overflow: hidden; } " +
+                    ".giveaway__columns-full{ display: block; } " + 
+                    ".giveaway__columns-full > :not(:last-child){ margin: 0 0 5px 0; } " +
+                    ".giveaway__columns--badges{ margin-bottom: 5px; } " +
+                    ".giveaway__columns--badges > .giveaway__column--contributor-level:not(.giveaway__column--empty){ -webkit-box-flex: 1; -moz-box-flex: 1; -webkit-flex: 1; -ms-flex: 1; flex: 1; } " +
+                    ".giveaway__column--empty{ height: 26px; width: 0; padding: 0; margin: 0 !important; visibility: hidden; } " + //important to force no widths
+                    ".giveaway__links{ display: block; margin-top: 5px; } " + 
+                    ".giveaway__links a{ margin-right: 5px; } " + 
+                    ".pinned-giveaways__inner-wrap--minimized .giveaway__row-outer-wrap:nth-child(-n+5){ display: initial; } " +
+                    ".giveaway__row--empty{ clear: both; } ");
+      
+      $doc.find(".giveaway__columns").addClass("giveaway__columns-full");
+      $.each($doc.find(".giveaway__row-outer-wrap"), function(i,wrap) {
+        var $wrap = $(wrap);
+        $wrap.find(".global__image-outer-wrap--avatar-small").remove();
+        
+        //move the game image to the top
+        $wrap.find(".giveaway__row-inner-wrap").prepend($wrap.find(".global__image-outer-wrap--game-medium").detach());
+        
+        //split name from fee/actions
+        $wrap.find(".giveaway__summary").prepend($("<h2/>").addClass("giveaway__heading")
+                                                 .html($wrap.find(".giveaway__heading__name").detach()));
+          
+        //badges in a single row
+        $wrap.find(".giveaway__columns").before($("<div/>").addClass("giveaway__columns giveaway__columns--badges")
+                                               .html($wrap.find(".giveaway__column--width-fill").nextAll().detach())
+                                               .prepend($("<div/>").addClass("giveaway__column--empty")));
+                                               
+        //condense links
+        var $link = $wrap.find(".fa-tag").next();
+        $link.html($link.text().replace(/([\d,]+) \w+/, "$1"));
+        $link = $wrap.find(".fa-comment").next();
+        $link.html($link.text().replace(/([\d,]+) \w+/, "$1"));
+      });
+      
+      //fix featured background to fill area
+      $doc.find(".pinned-giveaways__inner-wrap").append($("<div/>").addClass("giveaway__row--empty"));
     },
     bulkFeatured: {
       find: function() {
@@ -604,7 +659,8 @@ var frog = {
         if ($(".pinned-giveaways__inner-wrap").children().length < 3) { return; }
         
         //remove expanded bottom margin for use on our collapse button
-        GM_addStyle(".pinned-giveaways__inner-wrap:not(.pinned-giveaways__inner-wrap--minimized){ " +
+        GM_addStyle(".pinned-giveaways__button{ clear: both; } " +
+                    ".pinned-giveaways__inner-wrap:not(.pinned-giveaways__inner-wrap--minimized){ " +
                     "  border-radius: 4px 4px 0 0; margin-bottom: 0; }");
         
         //remove their click event in favor of our own
@@ -750,6 +806,7 @@ var frog = {
   /*************************************************************************LOADING***/
   loading: {
     everyNew: function($doc) {
+      //FIXME - adds muliple style sheets
       frog.giveaways.injectFlags.wishlist($doc);
       frog.giveaways.injectFlags.recent($doc);
       frog.giveaways.injectChance($doc);
@@ -762,12 +819,7 @@ var frog = {
     },
     giveaways: function() {
       //avoid stepping on other loading pages
-      if (!croak.loadGA.value
-          || ~location.href.indexOf("/trade")
-          || ~location.href.indexOf("/discussion")
-          || ~location.href.indexOf("/giveaway/")
-          || ~location.href.indexOf("/account/")
-          || ~location.href.indexOf("/settings/ribbit")) {
+      if (!croak.loadGA.value || !frog.helpers.isGAlist()) {
         return;
       }
       
@@ -1061,7 +1113,7 @@ frog.giveaways.injectSearch($document);
 frog.giveaways.injectNavSearch();
 frog.giveaways.hideEntered($document);
 frog.giveaways.easyHide($document);
-frog.giveaways.gridForm();
+frog.giveaways.gridForm($document);
 frog.sidebar.removeMyGA();
 
 frog.giveaways.activeThreads.find();
