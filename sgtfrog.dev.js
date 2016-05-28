@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.3.1
+// @version      0.3.2
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -54,7 +54,7 @@ var croak = {
 
 // Calls //
 var frog = {
-  debug: 0, //0 - off
+  debug: -2, //0 - off
   /************************************************************************LOGGING****/
   logging: {
     debug: function(message) {
@@ -772,12 +772,13 @@ var frog = {
           } else {
               d = new Date(time[1]);
           }
-          d.setHours(+time[2] + ((+time[2] < 12 && time[4] == "pm")? 12:0), +time[3], 0, 0);
+          d.setHours(+time[2] + ((+time[2] < 12 && time[4] == "pm")? 12:0) - (+time[2] == 12 && time[4] == "am"? 12:0), +time[3], 0, 0);
           
           frog.logging.debug(pullDate +"-->"+ d.toString());
           
           var show, interval, 
               seconds = Math.floor((new Date() - d) / 1000);
+              
           var interval = Math.floor(seconds / 31622400);
           if (interval > 1) {
             show = interval + " year";
