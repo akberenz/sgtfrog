@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.3.3
+// @version      0.3.4
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -94,56 +94,63 @@ var frog = {
         || ~location.href.indexOf("/archive")
         || ~location.href.indexOf("/settings"));
     },
-    //TODO - this can be combined into a single list loader
-    wishingWell: {
-      cache: null, //avoid reloading list when continuously loading giveaways
-      getWishes: function(onComplete) {
-        if (frog.helpers.wishingWell.cache === null) {
-          frog.helpers.callbackHell("/account/steam/wishlist/search?page=", 1, ".table__column__secondary-link",
-                                    function(result) {
-            frog.helpers.wishingWell.cache = result;
-            onComplete(result);
-          });
+    listingPit: {
+      cache: {
+        wishes: { name: "cache-wish", page: "/account/steam/wishlist/search?page=", touches: ".table__column__secondary-link", list: null },
+        white: { name: "cache-white", page: "/account/manage/whitelist/search?page=", touches: ".table__column__heading", list: null },
+        black: { name: "cache-black", page: "/account/manage/blacklist/search?page=", touches: ".table__column__heading", list: null }
+      },
+      getList: function(type, onComplete) {
+        frog.logging.debug("Pulling list for " + type);
+        var cached = frog.helpers.listingPit.cache[type];
+        
+        if (!cached.list) {
+          var saved = JSON.parse(GM_getValue(cached.name, null));
+          if (saved == null) {
+            frog.logging.debug("Entering hell..");
+            frog.helpers.listingPit.callbackHell(cached.page, 1, cached.touches, function(result) {
+              GM_setValue(cached.name, JSON.stringify(result));
+              GM_setValue(cached.name + "-time", Date.now());
+              cached.list = result;
+              onComplete(result);
+            });
+          } else {
+            frog.logging.debug("Had it saved..");
+            cached.list = saved;
+            onComplete(saved);
+          }
         } else {
-          onComplete(frog.helpers.wishingWell.cache);
+          frog.logging.debug("Already loaded..");
+          onComplete(cached.list);
         }
-      }
-    },
-    colorLists: {
-      cache: {}, //avoid reloading list on continuous load, one entry per color
-      getList: function(color, onComplete) {
-        if (frog.helpers.colorLists.cache[color] === undefined) {
-          frog.helpers.callbackHell("/account/manage/"+ color +"/search?page=", 1, ".table__column__heading",
-                                    function(result) {
-            frog.helpers.colorLists.cache[color] = result;
-            onComplete(result);
-          });
-        } else {
-          onComplete(frog.helpers.colorLists.cache[color]);
-        }
-      }
-    },
-    callbackHell: function(url, page, elms, done) {
-      $.ajax({
-        method: "GET",
-        url: url + page
-      }).done(function(data) {
-        var $data = $(data),
-            last = $data.find(".pagination__navigation").children().last().attr('data-page-number');
+      },
+      invalidateList: function(type) {
+        frog.logging.debug("Invalidating "+ type);
+        GM_setValue(frog.helpers.listingPit.cache[type].name, null);
+      },
+      callbackHell: function(url, page, elms, done) {
+        $.ajax({
+          method: "GET",
+          url: url + page
+        }).done(function(data) {
+          var $data = $(data),
+              last = $data.find(".pagination__navigation").children().last().attr('data-page-number');
 
-        var arr = [];
-        $.each($data.find(elms), function(i, e) {
-          arr.push($(e).attr("href"));
+          var arr = [];
+          $.each($data.find(elms), function(i, e) {
+            arr.push($(e).attr("href"));
+          });
+
+          if (page < last) {
+            frog.logging.debug('Going deeper..');
+            frog.helpers.listingPit.callbackHell(url, ++page, elms, function(result) {
+              done($.merge(arr, result));
+            });
+          } else {
+            done(arr);
+          }
         });
-
-        if (page < last) {
-          frog.helpers.callbackHell(url, ++page, elms, function(result) {
-            done($.merge(arr, result));
-          });
-        } else {
-          done(arr);
-        }
-      });
+      }
     },
     makeSideLink: function(url, name, count, subtext) {
       var $li = $("<li/>").addClass("sidebar__navigation__item");
@@ -422,7 +429,6 @@ var frog = {
         }
       },
       wishlist: function($doc, hasStyle) {
-          //FIXME - wrong position on grid view (occasionally)
         var $gives = $(".giveaway__row-outer-wrap");
         
         if ($gives.length > 0) {
@@ -437,9 +443,14 @@ var frog = {
           var $badge = $("<div/>").addClass("giveaway__column--wish").attr("title", "Wishlist");
           $("<i/>").addClass("fa fa-fw fa-star").appendTo($badge);
           
+          //refresh wishlist daily
+          if (Date.now() - GM_getValue("cache-wish-time", 0) > (24*60*60*1000)) {
+            frog.helpers.listingPit.invalidateList("wishes");
+          }
+          
           //load wishlist to know what gets badged
-          frog.helpers.wishingWell.getWishes(function(wishes) {
-            frog.logging.debug("Applying badges for "+ wishes.length +" wishes");
+          frog.helpers.listingPit.getList("wishes", function(wishes) {
+            frog.logging.info("Applying badges for "+ wishes.length +" wishes");
             
             $.each(wishes, function(i, wish) {
               var $gaBlock = $doc.find("a[href='"+ wish +"']").parent().parent();
@@ -1042,12 +1053,15 @@ var frog = {
               $buttons.find("a").remove();
               $usercorner.html($buttons);
               frog.helpers.applyGradients($usercorner, accent +" -120%, "+ base +" 65%");
+              frog.users.listenForLists($parent.attr("href"), true);
 
               $userstats.append($data.find(".featured__table__column").last()
                                 .prepend($("<div/>").addClass("featured__table__row").css("padding-top", "0").append($username)
                                          .append($data.find(".featured__table__column").first().find(".featured__table__row__right")[2])));
               frog.helpers.applyGradients($userstats, accent +" -20%, "+ base +" 80%");
             });
+          } else {
+            frog.users.listenForLists(lastLoad, true); //removed when hidden, so re-add on showing same user
           }
 
           var $target = $(ev.target);
@@ -1065,6 +1079,9 @@ var frog = {
       });
       $(".user-panel__outer-wrap").on("mouseleave", function() {
         $box.hide();
+        
+        $(".sidebar__shortcut__whitelist").off("click");
+        $(".sidebar__shortcut__blacklist").off("click");
       });
     },
     listIndication: function($doc, hasStyle) {
@@ -1078,8 +1095,8 @@ var frog = {
                     "a.user__blackened{ background-color: #000; color: #C55 !important; border-radius: 4px; padding: 2px 4px; text-shadow: none; } ");
       }
       
-      frog.helpers.colorLists.getList("whitelist", function(whitened) {
-        frog.logging.debug("Applying white to "+ whitened.length +" users");
+      frog.helpers.listingPit.getList("white", function(whitened) {
+        frog.logging.info("Applying white to "+ whitened.length +" users");
         
         $.each(whitened, function(i, white) {
           $doc.find("a[href='"+ white +"']").not(".global__image-outer-wrap").addClass("user__whitened")
@@ -1087,13 +1104,57 @@ var frog = {
         });
       });
       
-      frog.helpers.colorLists.getList("blacklist", function(blackened) {
-        frog.logging.debug("Applying black to "+ blackened.length +" users");
+      frog.helpers.listingPit.getList("black", function(blackened) {
+        frog.logging.info("Applying black to "+ blackened.length +" users");
         
         $.each(blackened, function(i, black) {
           $doc.find("a[href='"+ black +"']").not(".global__image-outer-wrap").addClass("user__blackened")
             .attr("title", "Blacklisted user").prepend("<i class='fa fa-ban'></i> ");
         });
+      });
+    },
+    listenForLists: function(user, replaceTags) {
+      if (user.indexOf("/user/") !== 0) { user = "/user/"+ user; }
+      
+      //listeners to ensure cache updates properly
+      $(".sidebar__shortcut__whitelist").on("click", function() {
+        frog.helpers.listingPit.invalidateList("white");
+        frog.helpers.listingPit.getList("black", function(blackened) {
+          //check if they also swapped lists
+          if (blackened.indexOf(user) > -1) {
+            frog.helpers.listingPit.invalidateList("black");
+          }
+        });
+        
+        if (replaceTags) {
+          var href = "a[href='"+ user +"']";
+          var $name = $(href).not(".global__image-outer-wrap").not($(".user-panel__outer-wrap").find(href));
+          
+          $name.attr("title", "").removeClass("user__blackened").toggleClass("user__whitened").find("i").remove();
+          if ($name.hasClass("user__whitened")) {
+            $name.attr("title", "Whitelisted user").prepend("<i class='fa fa-star-o'></i> ");
+          }
+        }
+      });
+      
+      $(".sidebar__shortcut__blacklist").on("click", function() {
+        frog.helpers.listingPit.invalidateList("black");
+        frog.helpers.listingPit.getList("white", function(whitened) {
+          //check if they also swapped lists
+          if (whitened.indexOf(user) > -1) {
+            frog.helpers.listingPit.invalidateList("white");
+          }
+        });
+        
+        if (replaceTags) {
+          var href = "a[href='"+ user +"']";
+          var $name = $(href).not(".global__image-outer-wrap").not($(".user-panel__outer-wrap").find(href));
+          
+          $name.attr("title", "").removeClass("user__whitened").toggleClass("user__blackened").find("i").remove();
+          if ($name.hasClass("user__blackened")) {
+            $name.attr("title", "Blacklisted user").prepend("<i class='fa fa-ban'></i> ");
+          }
+        }
       });
     }
   },
@@ -1137,6 +1198,7 @@ frog.threads.injectTimes($document);
 frog.sidebar.injectSGTools();
 frog.users.profileHover($document);
 frog.users.listIndication($document);
+frog.users.listenForLists($(".featured__heading__medium").text());
 
 
 window.setTimeout(function() {
