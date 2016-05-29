@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.3.2.1
+// @version      0.3.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -396,10 +396,10 @@ var frog = {
       
       var $sideentry = $(".sidebar__navigation").last(),
           $tools = $("<ul/>").append(
-          frog.helpers.makeSideLink("https://www.sgtools.info/sent/" + userViewed, "Real Value Sent").find("a").attr("target", "_check"),
-          frog.helpers.makeSideLink("https://www.sgtools.info/won/" + userViewed, "Real Value Won").find("a").attr("target", "_check"),
-          frog.helpers.makeSideLink("https://www.sgtools.info/nonactivated/" + userViewed, "Non-Activated").find("a").attr("target", "_check"),
-          frog.helpers.makeSideLink("https://www.sgtools.info/multiple/" + userViewed, "Multi Wins").find("a").attr("target", "_check")
+          frog.helpers.makeSideLink("http://www.sgtools.info/sent/" + userViewed, "Real Value Sent").find("a").attr("target", "_check"),
+          frog.helpers.makeSideLink("http://www.sgtools.info/won/" + userViewed, "Real Value Won").find("a").attr("target", "_check"),
+          frog.helpers.makeSideLink("http://www.sgtools.info/nonactivated/" + userViewed, "Non-Activated").find("a").attr("target", "_check"),
+          frog.helpers.makeSideLink("http://www.sgtools.info/multiple/" + userViewed, "Multi Wins").find("a").attr("target", "_check")
       );
 
       $("<h3/>").html("SG Tools").addClass("sidebar__heading").insertAfter($sideentry)
