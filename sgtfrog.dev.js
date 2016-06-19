@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.3.5
+// @version      0.4.0
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -80,6 +80,8 @@ var croak = {
                 } }
               }
 };
+
+var ribbit = JSON.parse(GM_getValue("userTags", '{}'));
 
 // Calls //
 var frog = {
@@ -980,6 +982,7 @@ var frog = {
       frog.giveaways.easyHide($doc);
       frog.giveaways.gridForm($doc, true);
       frog.users.profileHover($doc, true);
+      frog.users.tagging.show($doc, true);
       frog.users.listIndication($doc, true);
     },
     giveaways: function() {
@@ -1088,8 +1091,9 @@ var frog = {
               url: loc +"&page="+ page
             }).done(function(data) {
               var $data = $(data);
-              frog.users.profileHover($data);
-              frog.users.listIndication($data);
+              frog.users.profileHover($data, true);
+              frog.users.tagging.show($data, true);
+              frog.users.listIndication($data, true);
               frog.threads.injectTimes($data);
               
               var $paging = $data.find(".pagination");
@@ -1158,7 +1162,7 @@ var frog = {
       var $box = $("<div/>").addClass("global__image-outer-wrap user-panel__outer-wrap").appendTo($("body")).hide();
       var $userbox = $("<div/>").addClass("user-panel__inner-wrap").appendTo($box);
       
-      var $userimage = $("<a/>").append($("<div/>").addClass("user-panel__image")).appendTo($userbox),
+      var $userimage = $("<a/>").addClass("user-panel__link").append($("<div/>").addClass("user-panel__image")).appendTo($userbox),
           $loader = $("<i/>").addClass("user-panel__icon-load fa fa-spin fa-circle-o-notch"),
           $usercorner = $("<div/>").addClass("user-panel__corner").appendTo($userbox),
           $userstats = $("<div/>").addClass("user-panel__stats").appendTo($userbox);
@@ -1203,12 +1207,15 @@ var frog = {
               $buttons.find("a").remove();
               $usercorner.html($buttons);
               frog.helpers.applyGradients($usercorner, accent +" -120%, "+ base +" 65%");
-              frog.users.listenForLists($parent.attr("href"), true);
-
+              
               $userstats.append($data.find(".featured__table__column").last()
                                 .prepend($("<div/>").addClass("featured__table__row").css("padding-top", "0").append($username)
                                          .append($data.find(".featured__table__column").first().find(".featured__table__row__right")[2])));
               frog.helpers.applyGradients($userstats, accent +" -20%, "+ base +" 80%");
+              
+              var user = $parent.attr("href");
+              frog.users.listenForLists(user, true);
+              frog.users.tagging.injectEditor(user, true);
             });
           } else {
             frog.users.listenForLists(lastLoad, true); //removed when hidden, so re-add on showing same user
@@ -1234,6 +1241,70 @@ var frog = {
         $(".sidebar__shortcut__blacklist").off("click");
       });
     },
+    tagging: {
+        show: function($doc, hasStyle) {
+          if (~location.pathname.indexOf('/user/')) { return; }
+        
+          if (!hasStyle) {
+            GM_addStyle(".user__tagged{ text-decoration: none; border-radius: 4px; padding: 2px 4px; margin-left: .5em; background-color: rgba(0,0,0,.01); " +
+                        "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } ");
+          }
+          
+          $.each(Object.keys(ribbit), function(i, taglet) {
+            $doc.find("a[href='/user/"+ taglet +"']").not(".global__image-outer-wrap").append(
+              $("<span/>").addClass("user__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ ribbit[taglet])
+            );
+          });
+        },
+        injectEditor: function(user, isHover) {
+          if (!~location.pathname.indexOf('/user/') && !isHover) { return; }
+          if (~user.indexOf("/user/")) { user = user.substring(6); }
+          if (user == $(".nav__avatar-outer-wrap").attr("href").substring(6)) { return; } //don't tag self
+          
+          var tag = ribbit[user] || "Add User Tag",
+              ielm = "<i class='fa fa-tag fa-flip-horizontal' style='font-size: 14px;'></i> ";
+              
+          $("<div/>").attr("href", "#").html("<a>"+ ielm + tag +"</a>")
+            .css("color", $(".featured__table__row__right").find("a").css("color"))
+            .on("click", function(ev) {
+              var $div = $(this);
+              if ($div.children("input").length) { return; } //don't reset input if already set
+              
+              $div.html("<input type='text' placeholder='User Tag' value='"+ (ribbit[user] || "") +"' maxlength='16' />"). on("keypress", function(ev) {
+                var $this = $(this),
+                    code = ev.which || ev.keyCode;
+                
+                if (code == 13) {
+                  var val = $(this).children("input").val();
+                  $div.html("<a>"+ ielm + (val || "Add User Tag") +"</a>");
+                  $("a[href='/user/"+ user +"']").find(".user__tagged").remove();
+                  
+                  if (val) {
+                    ribbit[user] = val;
+                    
+                    if (isHover) {
+                      $("a[href='/user/"+ user +"']").not(".global__image-outer-wrap").append(
+                        $("<span/>").addClass("user__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ ribbit[user])
+                      );
+                      $(".user-panel__outer-wrap").find(".user__tagged").remove();
+                    }
+                  } else {
+                    delete ribbit[user];
+                  }
+                  GM_setValue("userTags", JSON.stringify(ribbit));
+                  
+                  $this.off("keypress");
+                } else if (code == 27) {
+                  $div.html("<a>"+ ielm + (ribbit[user] || "Add User Tag") +"</a>");
+                  $this.off("keypress");
+                }
+              });
+              
+              //highlight text on focus, reset on blur
+              $div.find("input").select().focus().on("blur", function() { $div.html("<a>"+ ielm + tag +"</a>"); $(this).parent().off("keypress"); });
+            }).insertAfter(".featured__heading__medium");
+        }
+    },
     listIndication: function($doc, hasStyle) {
       if (!croak.userLists.value || ~location.pathname.indexOf('/user/')) {
         return; //not active on user pages for obvious reasons
@@ -1251,8 +1322,8 @@ var frog = {
         if (!~blBack.indexOf("#")) { blBack = "#"+blBack; }
         
         //using !important selector on 'color' to override the :not(.comment__username--op) selector color
-        GM_addStyle("a.user__whitened{ background-color: "+ wlBack +"; color: "+ wlFore +" !important; border-radius: 4px; padding: 2px 4px; text-shadow: none; } " +
-                    "a.user__blackened{ background-color: "+ blBack +"; color: "+ blFore +" !important; border-radius: 4px; padding: 2px 4px; text-shadow: none; } ");
+        GM_addStyle("a.user__whitened{ background-color: "+ wlBack +"; color: "+ wlFore +" !important; border-radius: 4px; padding: 3px 5px; text-shadow: none; } " +
+                    "a.user__blackened{ background-color: "+ blBack +"; color: "+ blFore +" !important; border-radius: 4px; padding: 3px 5px; text-shadow: none; } ");
       }
       
       frog.helpers.listingPit.getList("white", function(whitened) {
@@ -1273,7 +1344,7 @@ var frog = {
         });
       });
     },
-    listenForLists: function(user, replaceTags) {
+    listenForLists: function(user, isHover) {
       if (user.indexOf("/user/") !== 0) { user = "/user/"+ user; }
       
       //listeners to ensure cache updates properly
@@ -1286,11 +1357,11 @@ var frog = {
           }
         });
         
-        if (replaceTags) {
-          var href = "a[href='"+ user +"']";
-          var $name = $(href).not(".global__image-outer-wrap").not($(".user-panel__outer-wrap").find(href));
+        if (isHover) {
+          var href = "a[href='"+ user +"']",
+              $name = $(href).not(".global__image-outer-wrap").not($(".user-panel__outer-wrap").find(href));
           
-          $name.attr("title", "").removeClass("user__blackened").toggleClass("user__whitened").find("i").remove();
+          $name.attr("title", "").removeClass("user__blackened").toggleClass("user__whitened").find("i").not(".fa-tag").remove();
           if ($name.hasClass("user__whitened")) {
             $name.attr("title", "Whitelisted user").prepend("<i class='fa fa-star-o'></i> ");
           }
@@ -1306,11 +1377,11 @@ var frog = {
           }
         });
         
-        if (replaceTags) {
+        if (isHover) {
           var href = "a[href='"+ user +"']";
           var $name = $(href).not(".global__image-outer-wrap").not($(".user-panel__outer-wrap").find(href));
           
-          $name.attr("title", "").removeClass("user__whitened").toggleClass("user__blackened").find("i").remove();
+          $name.attr("title", "").removeClass("user__whitened").toggleClass("user__blackened").find("i").not(".fa-tag").remove();
           if ($name.hasClass("user__blackened")) {
             $name.attr("title", "Blacklisted user").prepend("<i class='fa fa-ban'></i> ");
           }
@@ -1358,6 +1429,8 @@ frog.threads.injectTimes($document);
 
 frog.sidebar.injectSGTools();
 frog.users.profileHover($document);
+frog.users.tagging.show($document);
+frog.users.tagging.injectEditor($(".featured__heading__medium").text());
 frog.users.listIndication($document);
 frog.users.listenForLists($(".featured__heading__medium").text());
 
