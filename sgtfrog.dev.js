@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.4.0
+// @version      0.4.0.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1302,7 +1302,7 @@ var frog = {
               
               //highlight text on focus, reset on blur
               $div.find("input").select().focus().on("blur", function() { $div.html("<a>"+ ielm + tag +"</a>"); $(this).parent().off("keypress"); });
-            }).insertAfter(".featured__heading__medium");
+            }).insertAfter((isHover? ".user-panel__outer-wrap ":"") + ".featured__heading__medium");
         }
     },
     listIndication: function($doc, hasStyle) {
