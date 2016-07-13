@@ -1,7 +1,7 @@
 ## SteamGifts Tinkerer, featuring refined ostensible gain
 ###### *SGT frog* for short
 
-Userscript for improving SteamGifts.com interactions.
+Userscript for improving SteamGifts.com interactions.  
 Including over 20 configurable options, and only a small subset of permanently active enhancements.
 
 Report bugs or request a feature under the 'Issues' tab.
@@ -10,7 +10,7 @@ Report bugs or request a feature under the 'Issues' tab.
 
 ### Contributions
 
-Please try to match the style already present in the project.
+Please try to match the style already present in the project.  
 This includes 2 spaces for indentation, and opening brackets on the same line as the block controller.
 
 Compression is performed by the YUI Compressor library. Use the following command:
