@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.4.0.1
+// @version      0.4.0.2
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -771,7 +771,7 @@ var frog = {
         GM_addStyle(".pagination{ clear: both; } " +
                       ".giveaway__row-outer-wrap{ width: 19%; margin-right: 1%; float: left; } " +
                       ".giveaway__row-inner-wrap{ display: block; } " +
-                      ".global__image-outer-wrap--game-medium{ margin: 0 auto !important; } " + //important to override margins on :not(last)
+                      ".global__image-outer-wrap--game-medium{ width: initial; margin: 0 auto !important; } " + //important to override margins on :not(last)
                       ".giveaway__heading{ display: block; text-align: center; } " +
                       ".giveaway__heading:first-of-type{ height: auto; text-overflow: ellipsis; overflow: hidden; } " +
                       ".giveaway__columns-full{ display: block; } " + 
