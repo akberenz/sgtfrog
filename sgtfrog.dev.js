@@ -5,14 +5,13 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.5.0
+// @version      0.6.0
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
-// @require      https://code.jquery.com/jquery-1.12.3.js
+// @require      https://code.jquery.com/jquery-1.12.3.min.js
 // @grant        GM_addStyle
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @grant        GM_deleteValue
 // ==/UserScript==
 */
 
@@ -41,6 +40,7 @@ var frogVars = {
   sideMine:   { value: GM_getValue("sideMine",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Hide 'My Giveaways' in the sidebar? (Still available under nav dropdown)" },
   activeTalk: { value: GM_getValue("activeTalk", 2), set: { type: "circle", opt: ["Yes", "Sidebar", "No"] }, query: "Show the 'Active Discussions' section?" },
   collapsed:  { value: GM_getValue("collapsed",  3), set: { type: "square", opt: ["Discussions", "Trades"] }, query: "After first page, collapse original post:" },
+  tracking:   { value: GM_getValue("tracking",   0), set: { type: "square", opt: ["Discussions", "Trades"] }, query: "Track read comments and topics:" },
   userTools:  { value: GM_getValue("userTools",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show SGTools links on user pages?" },
   userDetail: { value: GM_getValue("userDetail", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show user details on avatar hover?" },
   userLists:  { value: GM_getValue("userLists",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Label black-/white- listed users?",
@@ -52,6 +52,10 @@ var frogVars = {
 };
 
 var frogTags = JSON.parse(GM_getValue("userTags", '{}'));
+var frogTracks = {
+  discuss: JSON.parse(GM_getValue("tracks[discuss]", '{}')),
+  trade: JSON.parse(GM_getValue("tracks[trade]", '{}'))
+};
 
 // Functions //
 var debug = 0, // 0 off, -1 info, -2 trace
@@ -500,7 +504,6 @@ fixedElements = {
 },
 loading = {
   addSpinner: function($afterElm) {
-    console.log('call');
     $afterElm.after($("<div/>").addClass("pagination__loader").html("<i class='fa fa-spin fa-circle-o-notch'></i>"));
   },
   removeSpinner: function() {
@@ -628,6 +631,7 @@ loading = {
             users.tagging.show($data, true);
             users.listIndication($data, true);
             threads.injectTimes($data);
+            threads.tracking.all($data);
             
             var $paging = $data.find(".pagination");
             $paging.find(".pagination__navigation").html("Page " + page);
@@ -674,7 +678,7 @@ sidebar = {
     }
   },
   injectSGTools: function() {
-    if (!frogVars.userTools.value || !~location.href.indexOf("/user/")) { return; }
+    if (!frogVars.userTools.value || !~location.pathname.indexOf("/user/")) { return; }
 
     var userViewed = location.href.split("/")[4];
     logging.debug("Found user: " + userViewed);
@@ -1096,6 +1100,56 @@ threads = {
         $edit.html(" <strong>*Edited: "+ show + (interval==1? "":"s") +" ago</strong>");
       }
     });
+  },
+  tracking: {
+    all: function($doc) {
+      if ((frogVars.tracking.value & 2) && ~location.pathname.indexOf("/discussions")) { threads.tracking.lists("discuss"); }
+      if ((frogVars.tracking.value & 1) && ~location.pathname.indexOf("/trades")) { threads.tracking.lists("trade"); }
+      
+      if ((frogVars.tracking.value & 2) && ~location.pathname.indexOf("/discussion/")) { threads.tracking.posts("discuss", $doc); }
+      if ((frogVars.tracking.value & 1) && ~location.pathname.indexOf("/trade/")) { threads.tracking.posts("trade", $doc); }
+    },
+    lists: function(set) {
+      var $rows = $(".table__row-outer-wrap");
+      logging.debug("Found "+ $rows.length +" rows");
+      $.each($rows, function(i, row) {
+        var $comment = $(row).find(".table__column--width-small").find("a");
+        var at = $comment.attr("href").indexOf("/", 1) + 1;
+        var tag = $comment.attr("href").substring(at, at + 5);
+        
+        var count = "Unread";
+        if (frogTracks[set][tag]) {
+          //find and show diffrence in read comments
+          count = '+' + (+($comment.text().replace(/,/g, "")) - frogTracks[set][tag].length);
+        }
+        
+        if (count != '+0') {
+          $comment.append(" <span class='icon-green'>("+ count +")</span>");
+        }
+      });
+    },
+    posts: function(set, $doc) {
+      var tag = location.href.split("/")[4];
+      if (!frogTracks[set][tag]) { frogTracks[set][tag] = []; }
+      logging.debug("Looking for unread posts in "+ tag);
+      
+      var findings = 0;
+      var $comments = $doc.find(".comment");
+      $.each($comments, function(i, comment) {
+        var $summary = $(comment).find(".comment__summary").first();
+        var id = $summary.attr("id");
+        
+        if (id && !~frogTracks[set][tag].indexOf(id)) {
+          frogTracks[set][tag].push(id);
+          var $when = $summary.find(".comment__actions").find("span");
+          $when.addClass("icon-green").attr("title", 'New ' + $when.attr("title"));
+          findings++;
+        }
+      });
+      
+      logging.info("Found "+ findings +" unread posts");
+      GM_setValue("tracks["+ set +"]", JSON.stringify(frogTracks[set]));
+    }
   }
 },
 users = {
@@ -1389,6 +1443,7 @@ pointless = {
     sidebar.injectSGTools();
 
     threads.injectTimes($document);
+    threads.tracking.all($document);
 
     users.profileHover($document);
     users.tagging.show($document);
