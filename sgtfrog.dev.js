@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.0
+// @version      0.6.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -36,7 +36,7 @@ var frogVars = {
   newBadges:  { value: GM_getValue("newBadges",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show additional giveaway badges?" },
   colorBadge: { value: GM_getValue("colorBadge", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Recolor standard giveaway badges?" },
   searchNav:  { value: GM_getValue("searchNav",  0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show the giveaway search bar in the top navigation?" },
-  pointInvl:  { value: GM_getValue("pointInvl",  0), set: { type: "number", opt: ["Seconds"], about: "Value in seconds, enter 0 to disable." }, query: "Regularly update points value?" },
+  pointInvl:  { value: GM_getValue("pointInvl",  0), set: { type: "number", opt: ["Seconds"], about: "Value in seconds, enter 0 to disable." }, query: "Regularly update header values (points, messages, etc.)?" },
   sideMine:   { value: GM_getValue("sideMine",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Hide 'My Giveaways' in the sidebar? (Still available under nav dropdown)" },
   activeTalk: { value: GM_getValue("activeTalk", 2), set: { type: "circle", opt: ["Yes", "Sidebar", "No"] }, query: "Show the 'Active Discussions' section?" },
   collapsed:  { value: GM_getValue("collapsed",  3), set: { type: "square", opt: ["Discussions", "Trades"] }, query: "After first page, collapse original post:" },
@@ -649,19 +649,26 @@ loading = {
   points: function() {
     if (frogVars.pointInvl.value < 1 || isNaN(frogVars.pointInvl.value)) { return; }
     if (frogVars.pointInvl.value < 15) {
+      //minimum 15 sec interval is to protect yourself from too many frequent requests
       logging.alert("Failed to apply defined points interval, using 15 seconds instead");
       frogVars.pointInvl.value = 15;
     }
     
     window.setInterval(function() {
-      logging.debug("Pulling new point value");
+      logging.debug("Pulling new header values");
       
       //load a small page to pull current points from
       $.ajax({
         method: "GET",
         url: "/about/brand-assets"
       }).done(function(data) {
-        $(".nav__points").html($(data).find(".nav__points").html());
+        var $data = $(data);
+        
+        $(".nav__points").html($data.find(".nav__points").html());
+        var $visList = $(".nav__button-container--notification");
+        $.each($data.find(".nav__button-container--notification"), function(i, notify) {
+          $($visList[i]).html($(notify).html());
+        });
       });
     }, frogVars.pointInvl.value * 1000);
   }
@@ -1201,7 +1208,7 @@ users = {
           $userimage.find("div").css("background-image", $this.css("background-image"));
           helpers.applyGradients($userstats.html(""), "#515763 0%, #2f3540 100%");
           helpers.applyGradients($usercorner.html($loader), "#424751 0%, #2f3540 100%");
-        
+
           $.ajax({
             method: "GET",
             url: $parent.attr("href")
@@ -1218,17 +1225,17 @@ users = {
             var base = $data.find(".featured__outer-wrap--user").css("background-color"),
                 accent = $data.find(".featured__table__row__right").find("a").css("color"),
                 $buttons = $data.find(".sidebar__shortcut-inner-wrap");
-            
+
             $buttons.find(".js__submit-form-inner").remove();
             $buttons.find("a").remove();
             $usercorner.html($buttons);
             helpers.applyGradients($usercorner, accent +" -120%, "+ base +" 65%");
-            
+
             $userstats.append($data.find(".featured__table__column").last()
                               .prepend($("<div/>").addClass("featured__table__row").css("padding-top", "0").append($username)
                                        .append($data.find(".featured__table__column").first().find(".featured__table__row__right")[2])));
             helpers.applyGradients($userstats, accent +" -20%, "+ base +" 80%");
-            
+
             var user = $parent.attr("href");
             users.listenForLists(user, true);
             users.tagging.injectEditor(user, true);
