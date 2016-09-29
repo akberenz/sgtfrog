@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.1
+// @version      0.6.2
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -667,7 +667,14 @@ loading = {
         $(".nav__points").html($data.find(".nav__points").html());
         var $visList = $(".nav__button-container--notification");
         $.each($data.find(".nav__button-container--notification"), function(i, notify) {
-          $($visList[i]).html($(notify).html());
+          var $currNote = $($visList[i]), $nextNote = $(notify);
+          
+          $currNote.html($nextNote.html());
+          if ($nextNote.hasClass("nav__button-container--active")) {
+            $currNote.removeClass("nav__button-container--inactive").addClass("nav__button-container--active");
+          } else {
+            $currNote.removeClass("nav__button-container--active").addClass("nav__button-container--inactive");
+          }
         });
       });
     }, frogVars.pointInvl.value * 1000);
@@ -1182,6 +1189,7 @@ users = {
                   ".user-panel__stats .featured__table__column{ margin: 0; } ");
     }
     
+    //FIXME - creates new box for every inf loaded page
     var $box = $("<div/>").addClass("global__image-outer-wrap user-panel__outer-wrap").appendTo($("body")).hide();
     var $userbox = $("<div/>").addClass("user-panel__inner-wrap").appendTo($box);
     
