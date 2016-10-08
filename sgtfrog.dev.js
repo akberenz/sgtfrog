@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.2
+// @version      0.6.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -887,7 +887,8 @@ giveaways = {
     if (!frogVars.searchNav.value) { return; }
     
     var $search = $("<div/>").addClass("sidebar__search-container").css("margin", "0 5px 0 0").css("height", "inherit")
-      .append($("<input class='sidebar__search-input' placeholder='Search Giveaways...' value='' type='text' />")
+      .append($("<input class='sidebar__search__ga-input' placeholder='Search Giveaways...' value='' type='text' />")
+              .css("padding", "0").css("border", "none")
               .on("keypress", function(ev) {
                 if (ev.which === 13) {
                   location.href = "/giveaways/search?q="+ $(this).val();
