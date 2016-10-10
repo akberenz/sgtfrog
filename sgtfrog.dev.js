@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.3
+// @version      0.6.4
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -899,7 +899,7 @@ giveaways = {
     $(".nav__left-container").prepend($search);
   },
   hideEntered: function($doc) {
-    if (!frogVars.hideEntry.value || ~location.href.indexOf("/giveaways/won")) { return; } //exclude own won list
+    if (!frogVars.hideEntry.value || ~location.href.indexOf("/user/") || ~location.href.indexOf("/group/")) { return; } //exclude hiding anything on user or group pages
     $doc.find(".is-faded").parent(".giveaway__row-outer-wrap").remove();
   },
   easyHide: function($doc) {
