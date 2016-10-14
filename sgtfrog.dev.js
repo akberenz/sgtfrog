@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.4
+// @version      0.6.5
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -51,14 +51,17 @@ var frogVars = {
               }
 };
 
-var frogTags = JSON.parse(GM_getValue("userTags", '{}'));
+var frogTags = { 
+  users: JSON.parse(GM_getValue("userTags", '{}')),
+  groups: JSON.parse(GM_getValue("groupTags", '{}'))
+};
 var frogTracks = {
   discuss: JSON.parse(GM_getValue("tracks[discuss]", '{}')),
   trade: JSON.parse(GM_getValue("tracks[trade]", '{}'))
 };
 
 // Functions //
-var debug = 0, // 0 off, -1 info, -2 trace
+var debug = -2, // 0 off, -1 info, -2 trace
 logging = {
   debug: function(message) {
     if (debug < -1) {
@@ -1199,73 +1202,81 @@ users = {
         $usercorner = $("<div/>").addClass("user-panel__corner").appendTo($userbox),
         $userstats = $("<div/>").addClass("user-panel__stats").appendTo($userbox);
     
-    var hoverTime, lastLoad = null;
-    $doc.find(".global__image-outer-wrap--avatar-small").not(".global__image-outer-wrap--missing-image").children()
-      .hover(function(ev) {
-      var $this = $(this);
-      
-      if (hoverTime) {
-        window.clearTimeout(hoverTime);
-        hoverTime = null;
-      }
-      hoverTime = window.setTimeout(function() {
-        var $parent = $this.parent();
+    var hoverTime, lastLoad = null,
+        $userAvs = $doc.find(".global__image-outer-wrap--avatar-small").not(".global__image-outer-wrap--missing-image").children();
         
-        //reset box for new load (unless same user)
-        if ($parent.attr("href") != lastLoad) {
-          $userimage.attr("href", $parent.attr("href"));
-          $userimage.find("div").css("background-image", $this.css("background-image"));
-          helpers.applyGradients($userstats.html(""), "#515763 0%, #2f3540 100%");
-          helpers.applyGradients($usercorner.html($loader), "#424751 0%, #2f3540 100%");
+    $.each($userAvs, function(i, av) {
+      var $av = $(av);
+      if (!~$av.parent().attr("href").indexOf("/user/")) { return; } //only user hover on users
+      
+      $av.hover(function(ev) {
+        var $this = $(this);
 
-          $.ajax({
-            method: "GET",
-            url: $parent.attr("href")
-          }).done(function(data) {
-            var $data = $(data);
-            lastLoad = $parent.attr("href");
-
-            var $suspend = $data.find(".sidebar__suspension-time"),
-                $username = $("<div/>").addClass("featured__table__row__left").html($data.find(".featured__heading"));
-            if ($suspend.length) {
-              $username.find(".featured__heading__medium").css("color", "#000").attr("title", "Suspension length: "+ $suspend.text());
-            }
-
-            var base = $data.find(".featured__outer-wrap--user").css("background-color"),
-                accent = $data.find(".featured__table__row__right").find("a").css("color"),
-                $buttons = $data.find(".sidebar__shortcut-inner-wrap");
-
-            $buttons.find(".js__submit-form-inner").remove();
-            $buttons.find("a").remove();
-            $usercorner.html($buttons);
-            helpers.applyGradients($usercorner, accent +" -120%, "+ base +" 65%");
-
-            $userstats.append($data.find(".featured__table__column").last()
-                              .prepend($("<div/>").addClass("featured__table__row").css("padding-top", "0").append($username)
-                                       .append($data.find(".featured__table__column").first().find(".featured__table__row__right")[2])));
-            helpers.applyGradients($userstats, accent +" -20%, "+ base +" 80%");
-
-            var user = $parent.attr("href");
-            users.listenForLists(user, true);
-            users.tagging.injectEditor(user, true);
-          });
-        } else {
-          users.listenForLists(lastLoad, true); //removed when hidden, so re-add on showing same user
+        if (hoverTime) {
+          window.clearTimeout(hoverTime);
+          hoverTime = null;
         }
+        hoverTime = window.setTimeout(function() {
+          var $parent = $this.parent();
 
-        var $target = $(ev.target);
-        var edge = 0;
-        if (($target.offset().left + width) > window.innerWidth) {
-          edge = ev.target.offsetWidth - width;
-        }
+          //reset box for new load (unless same user)
+          if ($parent.attr("href") != lastLoad) {
+            $userimage.attr("href", $parent.attr("href"));
+            $userimage.find("div").css("background-image", $this.css("background-image"));
+            helpers.applyGradients($userstats.html(""), "#515763 0%, #2f3540 100%");
+            helpers.applyGradients($usercorner.html($loader), "#424751 0%, #2f3540 100%");
 
-        $box.show()
-          .css("left", $target.offset().left - 1 - parseInt($parent.css("padding-left")) + edge)
-          .css("top", $target.offset().top - 1 - parseInt($parent.css("padding-top")));
-      }, 250);
-    }, function() {
-      window.clearTimeout(hoverTime);
+            $.ajax({
+              method: "GET",
+              url: $parent.attr("href")
+            }).done(function(data) {
+              var $data = $(data);
+              lastLoad = $parent.attr("href");
+
+              var $suspend = $data.find(".sidebar__suspension-time"),
+                  $username = $("<div/>").addClass("featured__table__row__left").html($data.find(".featured__heading"));
+              if ($suspend.length) {
+                $username.find(".featured__heading__medium").css("color", "#000").attr("title", "Suspension length: "+ $suspend.text());
+              }
+
+              var base = $data.find(".featured__outer-wrap--user").css("background-color"),
+                  accent = $data.find(".featured__table__row__right").find("a").css("color"),
+                  $buttons = $data.find(".sidebar__shortcut-inner-wrap");
+
+              $buttons.find(".js__submit-form-inner").remove();
+              $buttons.find("a").remove();
+              $usercorner.html($buttons);
+              helpers.applyGradients($usercorner, accent +" -120%, "+ base +" 65%");
+
+              $userstats.append($data.find(".featured__table__column").last()
+                        .prepend($("<div/>").addClass("featured__table__row").css("padding-top", "0").append($username)
+                        .append($data.find(".featured__table__column").first().find(".featured__table__row__right")[2])));
+              helpers.applyGradients($userstats, accent +" -20%, "+ base +" 80%");
+
+              var user = $parent.attr("href");
+              users.listenForLists(user, true);
+              users.tagging.injectEditor(user, true);
+            });
+          } else {
+            users.listenForLists(lastLoad, true); //removed when hidden, so re-add on showing same user
+          }
+
+          var $target = $(ev.target);
+          var edge = 0;
+          if (($target.offset().left + width) > window.innerWidth) {
+            edge = ev.target.offsetWidth - width;
+          }
+
+          $box.show()
+              .css("left", $target.offset().left - 1 - parseInt($parent.css("padding-left")) + edge)
+              .css("top", $target.offset().top - 1 - parseInt($parent.css("padding-top")));
+        }, 250);
+      }, function() {
+        window.clearTimeout(hoverTime);
+      });
+      
     });
+    
     $(".user-panel__outer-wrap").on("mouseleave", function() {
       $box.hide();
       
@@ -1274,68 +1285,27 @@ users = {
     });
   },
   tagging: {
-      show: function($doc, hasStyle) {
-        if (~location.pathname.indexOf('/user/')) { return; }
-      
-        if (!hasStyle) {
-          GM_addStyle(".user__tagged{ text-decoration: none; border-radius: 4px; padding: 2px 4px; margin-left: .5em; background-color: rgba(0,0,0,.01); " +
-                      "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } ");
-        }
-        
-        $.each(Object.keys(frogTags), function(i, taglet) {
-          $doc.find("a[href='/user/"+ taglet +"']").not(".global__image-outer-wrap").append(
-            $("<span/>").addClass("user__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags[taglet])
-          );
-        });
-      },
-      injectEditor: function(user, isHover) {
-        if (!~location.pathname.indexOf('/user/') && !isHover) { return; }
-        if (~user.indexOf("/user/")) { user = user.substring(6); }
-        if (user == $(".nav__avatar-outer-wrap").attr("href").substring(6)) { return; } //don't tag self
-        
-        var tag = frogTags[user] || "Add User Tag",
-            ielm = "<i class='fa fa-tag fa-flip-horizontal' style='font-size: 14px;'></i> ";
-            
-        $("<div/>").attr("href", "#").html("<a>"+ ielm + tag +"</a>")
-          .css("color", $(".featured__table__row__right").find("a").css("color"))
-          .on("click", function(ev) {
-            var $div = $(this);
-            if ($div.children("input").length) { return; } //don't reset input if already set
-            
-            $div.html("<input type='text' placeholder='User Tag' value='"+ (frogTags[user] || "") +"' maxlength='16' />"). on("keypress", function(ev) {
-              var $this = $(this),
-                  code = ev.which || ev.keyCode;
-              
-              if (code == 13) {
-                var val = $(this).children("input").val();
-                $div.html("<a>"+ ielm + (val || "Add User Tag") +"</a>");
-                $("a[href='/user/"+ user +"']").find(".user__tagged").remove();
-                
-                if (val) {
-                  frogTags[user] = val;
-                  
-                  if (isHover) {
-                    $("a[href='/user/"+ user +"']").not(".global__image-outer-wrap").append(
-                      $("<span/>").addClass("user__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags[user])
-                    );
-                    $(".user-panel__outer-wrap").find(".user__tagged").remove();
-                  }
-                } else {
-                  delete frogTags[user];
-                }
-                GM_setValue("userTags", JSON.stringify(frogTags));
-                
-                $this.off("keypress");
-              } else if (code == 27) {
-                $div.html("<a>"+ ielm + (frogTags[user] || "Add User Tag") +"</a>");
-                $this.off("keypress");
-              }
-            });
-            
-            //highlight text on focus, reset on blur
-            $div.find("input").select().focus().on("blur", function() { $div.html("<a>"+ ielm + tag +"</a>"); $(this).parent().off("keypress"); });
-          }).insertAfter((isHover? ".user-panel__outer-wrap ":"") + ".featured__heading__medium");
+    show: function($doc, hasStyle) {
+      if (~location.pathname.indexOf('/user/')) { return; }
+    
+      if (!hasStyle) {
+        GM_addStyle(".user__tagged{ text-decoration: none; border-radius: 4px; padding: 2px 4px; margin-left: .5em; background-color: rgba(0,0,0,.01); " +
+                    "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } ");
       }
+      
+      $.each(Object.keys(frogTags.users), function(i, taglet) {
+        $doc.find("a[href='/user/"+ taglet +"']").not(".global__image-outer-wrap").append(
+          $("<span/>").addClass("user__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags.users[taglet])
+        );
+      });
+    },
+    injectEditor: function(user, isHover) {
+      if (!~location.pathname.indexOf('/user/') && !isHover) { return; }
+      if (~user.indexOf("/user/")) { user = user.substring(6); }
+      if (user == $(".nav__avatar-outer-wrap").attr("href").substring(6)) { return; } //don't tag self
+      
+      profiles.editor(isHover, "user", "users", user);
+    }
   },
   listIndication: function($doc, hasStyle) {
     if (!frogVars.userLists.value || ~location.pathname.indexOf('/user/')) {
@@ -1421,6 +1391,74 @@ users = {
     });
   }
 },
+groups = {
+  tagging: {
+    show: function() {
+      if (~location.pathname.indexOf('/group/')) { return; }
+      
+      GM_addStyle(".group__tagged{ text-decoration: none; border-radius: 4px; padding: 2px 4px; margin-left: .5em; background-color: rgba(0,0,0,.01); " +
+                  "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } ");
+      
+      $.each(Object.keys(frogTags.groups), function(i, taglet) {
+        $document.find("a[href='/group/"+ taglet +"']").not(".global__image-outer-wrap").append(
+          $("<span/>").addClass("group__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags.groups[taglet])
+        );
+      });
+    },
+    injectEditor: function(group, isHover) {
+      if (!~location.pathname.indexOf('/group/') && !isHover) { return; }
+      if (~group.indexOf("/group/")) { group = group.substring(6); }
+      
+      profiles.editor(isHover, "group", "groups", group);
+    }
+  }
+},
+profiles = {
+  editor: function(isHover, setName, tagKey, tagTarget) {
+    var tag = frogTags[tagKey][tagTarget] || "Add Custom Tag",
+        ielm = "<i class='fa fa-tag fa-flip-horizontal' style='font-size: 14px;'></i> ";
+    
+    $("<div/>").attr("href", "#").html("<a>"+ ielm + tag +"</a>")
+      .css("color", $(".featured__table__row__right").find("a").css("color"))
+      .on("click", function(ev) {
+        var $div = $(this);
+        if ($div.children("input").length) { return; } //don't reset input if already set
+        
+        $div.html("<input type='text' placeholder='Custom Tag' value='"+ (frogTags[tagKey][tagTarget] || "") +"' maxlength='16' />"). on("keypress", function(ev) {
+          var $this = $(this),
+              code = ev.which || ev.keyCode;
+          
+          if (code == 13) {
+            var val = $(this).children("input").val();
+            $div.html("<a>"+ ielm + (val || "Add Custom Tag") +"</a>");
+            $("a[href='/"+ setName +"/"+ tagTarget +"']").find("."+ setName +"__tagged").remove();
+            
+            if (val) {
+              frogTags[tagKey][tagTarget] = val;
+              
+              if (isHover) {
+                $("a[href='/"+ setName +"/"+ tagTarget +"']").not(".global__image-outer-wrap").append(
+                  $("<span/>").addClass(setName +"__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags[tagKey][tagTarget])
+                );
+                $("."+ setName +"-panel__outer-wrap").find("."+ setName +"__tagged").remove();
+              }
+            } else {
+              delete frogTags[tagKey][tagTarget];
+            }
+            GM_setValue(setName +"Tags", JSON.stringify(frogTags[tagKey]));
+            
+            $this.off("keypress");
+          } else if (code == 27) {
+            $div.html("<a>"+ ielm + (frogTags[tagKey][tagTarget] || "Add Custom Tag") +"</a>");
+            $this.off("keypress");
+          }
+        });
+        
+        //highlight text on focus, reset on blur
+        $div.find("input").select().focus().on("blur", function() { $div.html("<a>"+ ielm + tag +"</a>"); $(this).parent().off("keypress"); });
+      }).insertAfter((isHover? "."+ setName +"-panel__outer-wrap ":"") + ".featured__heading__medium");
+  }
+};
 pointless = {
   kccode: function() {
     GM_addStyle("*{ direction: rtl; } ");
@@ -1431,7 +1469,8 @@ pointless = {
 
 
 // SETUP //
-(function(){    
+(function(){
+  try {
     settings.injectPage();
     settings.injectMenu();
     settings.invalidateOnSync();
@@ -1466,6 +1505,9 @@ pointless = {
     users.tagging.injectEditor($(".featured__heading__medium").text());
     users.listIndication($document);
     users.listenForLists($(".featured__heading__medium").text());
+    
+    groups.tagging.show();
+    groups.tagging.injectEditor(location.pathname.substring(location.pathname.indexOf("/group/")+7));
 
 
     window.setTimeout(function() {
@@ -1475,6 +1517,10 @@ pointless = {
       threads.collapseDiscussion();
       threads.collapseTrade();
     }, 100);
+  }
+  catch(err) {
+    logging.warn(err);
+  }
 })();
 
 
