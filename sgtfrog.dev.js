@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.5
+// @version      0.6.5.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -573,7 +573,7 @@ loading = {
             loading.removeSpinner();
             return;
           }
-
+          
           var $paging = $data.find(".pagination");
           $paging.find(".pagination__navigation").html("Page " + page);
           
@@ -702,10 +702,10 @@ sidebar = {
     
     var $sideentry = $(".sidebar__navigation").last(),
         $tools = $("<ul/>").append(
-        helpers.makeSideLink("http://www.sgtools.info/sent/" + userViewed, "Real Value Sent").find("a").attr("target", "_check"),
-        helpers.makeSideLink("http://www.sgtools.info/won/" + userViewed, "Real Value Won").find("a").attr("target", "_check"),
-        helpers.makeSideLink("http://www.sgtools.info/nonactivated/" + userViewed, "Non-Activated").find("a").attr("target", "_check"),
-        helpers.makeSideLink("http://www.sgtools.info/multiple/" + userViewed, "Multi Wins").find("a").attr("target", "_check")
+        helpers.makeSideLink("http://www.sgtools.info/sent/" + userViewed, "Real Value Sent").find("a").attr("target", "_checkSent"),
+        helpers.makeSideLink("http://www.sgtools.info/won/" + userViewed, "Real Value Won").find("a").attr("target", "_checkWon"),
+        helpers.makeSideLink("http://www.sgtools.info/nonactivated/" + userViewed, "Non-Activated").find("a").attr("target", "_checkNon"),
+        helpers.makeSideLink("http://www.sgtools.info/multiple/" + userViewed, "Multi Wins").find("a").attr("target", "_checkMulti")
     );
 
     $("<h3/>").html("SG Tools").addClass("sidebar__heading").insertAfter($sideentry)
