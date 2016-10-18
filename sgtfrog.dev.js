@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.5.1
+// @version      0.6.6
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -567,16 +567,21 @@ loading = {
 
           $data.find(".pinned-giveaways__outer-wrap").remove(); //avoid appending pinned every load
           var $nextGiveaways = $data.find(".giveaway__row-outer-wrap").detach();
-
-          if ($nextGiveaways.length === 0) {
-            logging.info("No more giveaways");
-            loading.removeSpinner();
-            return;
-          }
           
           var $paging = $data.find(".pagination");
-          $paging.find(".pagination__navigation").html("Page " + page);
+          var $nav = $paging.find(".pagination__navigation");
           
+          if ($nextGiveaways.length === 0 || (~location.href.indexOf("/group/") && $nav.children().last().text().trim() !== 'Last')) {
+            logging.info("No more giveaways");
+            loading.removeSpinner();
+
+            var lastNum = $nav.children().last().attr("data-page-number");
+            if (!lastNum || page-1 == lastNum) {
+                return;
+            }
+          }
+          
+          $nav.html("Page " + page);
           $(".giveaway__row-outer-wrap").last().parent()
             .append($paging).append($nextGiveaways);
           
@@ -702,10 +707,10 @@ sidebar = {
     
     var $sideentry = $(".sidebar__navigation").last(),
         $tools = $("<ul/>").append(
-        helpers.makeSideLink("http://www.sgtools.info/sent/" + userViewed, "Real Value Sent").find("a").attr("target", "_checkSent"),
-        helpers.makeSideLink("http://www.sgtools.info/won/" + userViewed, "Real Value Won").find("a").attr("target", "_checkWon"),
-        helpers.makeSideLink("http://www.sgtools.info/nonactivated/" + userViewed, "Non-Activated").find("a").attr("target", "_checkNon"),
-        helpers.makeSideLink("http://www.sgtools.info/multiple/" + userViewed, "Multi Wins").find("a").attr("target", "_checkMulti")
+        helpers.makeSideLink("http://www.sgtools.info/sent/" + userViewed, "Real Value Sent").find("a").attr("target", "_check"),
+        helpers.makeSideLink("http://www.sgtools.info/won/" + userViewed, "Real Value Won").find("a").attr("target", "_check"),
+        helpers.makeSideLink("http://www.sgtools.info/nonactivated/" + userViewed, "Non-Activated").find("a").attr("target", "_check"),
+        helpers.makeSideLink("http://www.sgtools.info/multiple/" + userViewed, "Multi Wins").find("a").attr("target", "_check")
     );
 
     $("<h3/>").html("SG Tools").addClass("sidebar__heading").insertAfter($sideentry)
