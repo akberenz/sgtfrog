@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.6
+// @version      0.6.6.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -22,6 +22,7 @@ if ($(".nav__sits").length) {
   console.warn("[RIBBIT] User is not logged in, cannot run script.");
   throw new Error("No lilypad.");
 }
+
 
 // Variables //
 var frogVars = {
@@ -59,6 +60,26 @@ var frogTracks = {
   discuss: JSON.parse(GM_getValue("tracks[discuss]", '{}')),
   trade: JSON.parse(GM_getValue("tracks[trade]", '{}'))
 };
+
+
+//// TODO - REMOVE FOLLOWING CODE ////
+
+//temporary measure to pull buggy group tags over to implemented system
+for(var tuk in frogTags.users) {
+    if (frogTags.users.hasOwnProperty(tuk)) {
+        if (tuk.indexOf("/group/") == 0) {
+            console.debug("Found old group tag => " + tuk);
+            frogTags.groups[tuk.substring(7)] = frogTags.users[tuk];
+            delete frogTags.users[tuk];
+        }
+    }
+}
+
+GM_setValue("userTags", JSON.stringify(frogTags.users));
+GM_setValue("groupTags", JSON.stringify(frogTags.groups));
+
+//// ----- ////
+
 
 // Functions //
 var debug = -2, // 0 off, -1 info, -2 trace
