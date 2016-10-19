@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.7
+// @version      0.6.7.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -44,6 +44,7 @@ var frogVars = {
   tracking:   { value: GM_getValue("tracking",   0), set: { type: "square", opt: ["Discussions", "Trades"] }, query: "Track read comments and topics:" },
   userTools:  { value: GM_getValue("userTools",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show SGTools links on user pages?" },
   hoverInfo:  { value: GM_getValue("userDetail", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show profile details on avatar hover?" },
+  customTags: { value: GM_getValue("customTags", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Allow tagging of users and groups?" },
   userLists:  { value: GM_getValue("userLists",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Label black-/white- listed users?",
                 sub: { name: "Configure", settings: {
                     userWhite: { value: JSON.parse(GM_getValue("userWhite", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }, query: "Whitelisted label colors:" }, 
@@ -84,7 +85,7 @@ GM_setValue("groupTags", JSON.stringify(frogTags.groups));
 
 
 // Functions //
-var debug = -2, // 0 off, -1 info, -2 trace
+var debug = 0, // 0 off, -1 info, -2 trace
 logging = {
   debug: function(message) {
     if (debug < -1) {
@@ -1204,13 +1205,13 @@ users = {
   },
   tagging: {
     show: function($doc, hasStyle) {
-      if (~location.pathname.indexOf('/user/')) { return; }
-    
+      if (!frogVars.customTags.value || ~location.pathname.indexOf('/user/')) { return; }
+
       if (!hasStyle) {
         GM_addStyle(".user__tagged{ text-decoration: none; border-radius: 4px; padding: 2px 4px; margin-left: .5em; background-color: rgba(0,0,0,.01); " +
                     "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } ");
       }
-      
+
       $.each(Object.keys(frogTags.users), function(i, taglet) {
         $doc.find("a[href='/user/"+ taglet +"']").not(".global__image-outer-wrap").append(
           $("<span/>").addClass("user__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags.users[taglet])
@@ -1218,7 +1219,7 @@ users = {
       });
     },
     injectEditor: function(user, isHover) {
-      if (!~location.pathname.indexOf('/user/') && !isHover) { return; }
+      if (!frogVars.customTags.value || (!~location.pathname.indexOf('/user/') && !isHover)) { return; }
       if (~user.indexOf("/user/")) { user = user.substring(6); }
       if (user == $(".nav__avatar-outer-wrap").attr("href").substring(6)) { return; } //don't tag self
       
@@ -1315,7 +1316,7 @@ groups = {
   },
   tagging: {
     show: function() {
-      if (~location.pathname.indexOf('/group/')) { return; }
+      if (!frogVars.customTags.value || ~location.pathname.indexOf('/group/')) { return; }
       
       GM_addStyle(".group__tagged{ text-decoration: none; border-radius: 4px; padding: 2px 4px; margin-left: .5em; background-color: rgba(0,0,0,.01); " +
                   "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } ");
@@ -1327,7 +1328,7 @@ groups = {
       });
     },
     injectEditor: function(group, isHover) {
-      if (!~location.pathname.indexOf('/group/') && !isHover) { return; }
+      if (!frogVars.customTags.value || (!~location.pathname.indexOf('/group/') && !isHover)) { return; }
       if (~group.indexOf("/group/")) { group = group.substring(6); }
       
       profiles.editor(isHover, "group", "groups", group);
