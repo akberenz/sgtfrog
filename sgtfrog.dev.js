@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.6.1
+// @version      0.6.7
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -43,7 +43,7 @@ var frogVars = {
   collapsed:  { value: GM_getValue("collapsed",  3), set: { type: "square", opt: ["Discussions", "Trades"] }, query: "After first page, collapse original post:" },
   tracking:   { value: GM_getValue("tracking",   0), set: { type: "square", opt: ["Discussions", "Trades"] }, query: "Track read comments and topics:" },
   userTools:  { value: GM_getValue("userTools",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show SGTools links on user pages?" },
-  userDetail: { value: GM_getValue("userDetail", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show user details on avatar hover?" },
+  hoverInfo:  { value: GM_getValue("userDetail", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show profile details on avatar hover?" },
   userLists:  { value: GM_getValue("userLists",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Label black-/white- listed users?",
                 sub: { name: "Configure", settings: {
                     userWhite: { value: JSON.parse(GM_getValue("userWhite", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }, query: "Whitelisted label colors:" }, 
@@ -60,6 +60,8 @@ var frogTracks = {
   discuss: JSON.parse(GM_getValue("tracks[discuss]", '{}')),
   trade: JSON.parse(GM_getValue("tracks[trade]", '{}'))
 };
+
+var frogShared = {};
 
 
 //// TODO - REMOVE FOLLOWING CODE ////
@@ -598,7 +600,7 @@ loading = {
 
             var lastNum = $nav.children().last().attr("data-page-number");
             if (!lastNum || page-1 == lastNum) {
-                return;
+              return;
             }
           }
           
@@ -1198,117 +1200,7 @@ threads = {
 },
 users = {
   profileHover: function($doc, hasStyle) {
-    if (!frogVars.userDetail.value) { return; }
-    
-    var img = 64, pad = 5;
-    var width = 360, height = 160;
-    if (!hasStyle) {
-      GM_addStyle(".user-panel__outer-wrap{ position: absolute; width: "+ width +"px; height: "+ height +"px; color: #21262f; } " +
-                  ".user-panel__inner-wrap{ position: relative; width:100%; height: 100%; } " +
-                  ".user-panel__image{ position: absolute; top: 0; left: 0; width: "+ img +"px; height: "+ img +"px; " +
-                  "  border-radius: 5px; } " +
-                  ".user-panel__corner{ position: absolute; top: "+ (img+pad) +"px; bottom: 0; left: 0; right: "+ (width-(img+pad)) +"px; " +
-                  "  padding: 5px; background-color: #465670; border-radius: 3px 0 0 3px; } " +
-                  ".user-panel__corner .user-panel__icon-load{ font-size: 5em; color: rgba(255,255,255,0.6); } " +
-                  ".user-panel__corner .sidebar__shortcut-inner-wrap{ display: block; } " +
-                  ".user-panel__corner .sidebar__shortcut__whitelist{ margin: 0 0 5px 0; }" +
-                  ".user-panel__stats{ position: absolute; top: 0; bottom: 0; left: "+ (img+pad) +"px; right: 0; " +
-                  "  padding: 5px; background-color: #465670; border-radius: 3px 3px 3px 0; } " +
-                  ".user-panel__stats .featured__heading__medium{ font-size: 16px; } " +
-                  ".user-panel__stats .featured__heading{ margin-bottom: 0; } " +
-                  ".user-panel__stats .featured__table__column{ margin: 0; } ");
-    }
-    
-    //FIXME - creates new box for every inf loaded page
-    var $box = $("<div/>").addClass("global__image-outer-wrap user-panel__outer-wrap").appendTo($("body")).hide();
-    var $userbox = $("<div/>").addClass("user-panel__inner-wrap").appendTo($box);
-    
-    var $userimage = $("<a/>").addClass("user-panel__link").append($("<div/>").addClass("user-panel__image")).appendTo($userbox),
-        $loader = $("<i/>").addClass("user-panel__icon-load fa fa-spin fa-circle-o-notch"),
-        $usercorner = $("<div/>").addClass("user-panel__corner").appendTo($userbox),
-        $userstats = $("<div/>").addClass("user-panel__stats").appendTo($userbox);
-    
-    var hoverTime, lastLoad = null,
-        $userAvs = $doc.find(".global__image-outer-wrap--avatar-small").not(".global__image-outer-wrap--missing-image").children();
-        
-    $.each($userAvs, function(i, av) {
-      var $av = $(av);
-      if (!~$av.parent().attr("href").indexOf("/user/")) { return; } //only user hover on users
-      
-      $av.hover(function(ev) {
-        var $this = $(this);
-
-        if (hoverTime) {
-          window.clearTimeout(hoverTime);
-          hoverTime = null;
-        }
-        hoverTime = window.setTimeout(function() {
-          var $parent = $this.parent();
-
-          //reset box for new load (unless same user)
-          if ($parent.attr("href") != lastLoad) {
-            $userimage.attr("href", $parent.attr("href"));
-            $userimage.find("div").css("background-image", $this.css("background-image"));
-            helpers.applyGradients($userstats.html(""), "#515763 0%, #2f3540 100%");
-            helpers.applyGradients($usercorner.html($loader), "#424751 0%, #2f3540 100%");
-
-            $.ajax({
-              method: "GET",
-              url: $parent.attr("href")
-            }).done(function(data) {
-              var $data = $(data);
-              lastLoad = $parent.attr("href");
-
-              var $suspend = $data.find(".sidebar__suspension-time"),
-                  $username = $("<div/>").addClass("featured__table__row__left").html($data.find(".featured__heading"));
-              if ($suspend.length) {
-                $username.find(".featured__heading__medium").css("color", "#000").attr("title", "Suspension length: "+ $suspend.text());
-              }
-
-              var base = $data.find(".featured__outer-wrap--user").css("background-color"),
-                  accent = $data.find(".featured__table__row__right").find("a").css("color"),
-                  $buttons = $data.find(".sidebar__shortcut-inner-wrap");
-
-              $buttons.find(".js__submit-form-inner").remove();
-              $buttons.find("a").remove();
-              $usercorner.html($buttons);
-              helpers.applyGradients($usercorner, accent +" -120%, "+ base +" 65%");
-
-              $userstats.append($data.find(".featured__table__column").last()
-                        .prepend($("<div/>").addClass("featured__table__row").css("padding-top", "0").append($username)
-                        .append($data.find(".featured__table__column").first().find(".featured__table__row__right")[2])));
-              helpers.applyGradients($userstats, accent +" -20%, "+ base +" 80%");
-
-              var user = $parent.attr("href");
-              users.listenForLists(user, true);
-              users.tagging.injectEditor(user, true);
-            });
-          } else {
-            users.listenForLists(lastLoad, true); //removed when hidden, so re-add on showing same user
-          }
-
-          var $target = $(ev.target);
-          var edge = 0;
-          if (($target.offset().left + width) > window.innerWidth) {
-            edge = ev.target.offsetWidth - width;
-          }
-
-          $box.show()
-              .css("left", $target.offset().left - 1 - parseInt($parent.css("padding-left")) + edge)
-              .css("top", $target.offset().top - 1 - parseInt($parent.css("padding-top")));
-        }, 250);
-      }, function() {
-        window.clearTimeout(hoverTime);
-      });
-      
-    });
-    
-    $(".user-panel__outer-wrap").on("mouseleave", function() {
-      $box.hide();
-      
-      $(".sidebar__shortcut__whitelist").off("click");
-      $(".sidebar__shortcut__blacklist").off("click");
-    });
+    profiles.hover(true, $doc, hasStyle);
   },
   tagging: {
     show: function($doc, hasStyle) {
@@ -1387,7 +1279,7 @@ users = {
       
       if (isHover) {
         var href = "a[href='"+ user +"']",
-            $name = $(href).not(".global__image-outer-wrap").not($(".user-panel__outer-wrap").find(href));
+            $name = $(href).not(".global__image-outer-wrap").not($(".hover-panel__outer-wrap").find(href));
         
         $name.attr("title", "").removeClass("user__blackened").toggleClass("user__whitened").find("i").not(".fa-tag").remove();
         if ($name.hasClass("user__whitened")) {
@@ -1407,7 +1299,7 @@ users = {
       
       if (isHover) {
         var href = "a[href='"+ user +"']";
-        var $name = $(href).not(".global__image-outer-wrap").not($(".user-panel__outer-wrap").find(href));
+        var $name = $(href).not(".global__image-outer-wrap").not($(".hover-panel__outer-wrap").find(href));
         
         $name.attr("title", "").removeClass("user__whitened").toggleClass("user__blackened").find("i").not(".fa-tag").remove();
         if ($name.hasClass("user__blackened")) {
@@ -1418,6 +1310,9 @@ users = {
   }
 },
 groups = {
+  profileHover: function($doc, hasStyle) {
+    profiles.hover(false, $doc, true); //hasStyle true, as user hover (joint feature) will provide it
+  },
   tagging: {
     show: function() {
       if (~location.pathname.indexOf('/group/')) { return; }
@@ -1440,12 +1335,146 @@ groups = {
   }
 },
 profiles = {
+  hover: function(isUser, $doc, hasStyle) {
+    if (!frogVars.hoverInfo.value) { return; }
+
+    var img = 64, pad = 5;
+    var width = 360, height = 160;
+    if (!hasStyle) {
+      GM_addStyle(".hover-panel__outer-wrap{ position: absolute; width: "+ width +"px; height: "+ height +"px; color: #21262f; } " +
+                  ".hover-panel__inner-wrap{ position: relative; width:100%; height: 100%; } " +
+                  ".hover-panel__image{ position: absolute; top: 0; left: 0; width: "+ img +"px; height: "+ img +"px; " +
+                  "  border-radius: 5px; } " +
+                  ".hover-panel__corner{ position: absolute; top: "+ (img+pad) +"px; bottom: 0; left: 0; right: "+ (width-(img+pad)) +"px; " +
+                  "  padding: 5px; background-color: #465670; border-radius: 3px 0 0 3px; } " +
+                  ".hover-panel__corner .hover-panel__icon-load{ font-size: 5em; color: rgba(255,255,255,0.6); } " +
+                  ".hover-panel__corner .sidebar__shortcut-inner-wrap{ display: block; } " +
+                  ".hover-panel__corner .sidebar__shortcut__whitelist{ margin: 0 0 5px 0; }" +
+                  ".hover-panel__stats{ position: absolute; top: 0; bottom: 0; left: "+ (img+pad) +"px; right: 0; " +
+                  "  padding: 5px; background-color: #465670; border-radius: 3px 3px 3px 0; } " +
+                  ".hover-panel__stats .featured__heading__medium{ font-size: 16px; } " +
+                  ".hover-panel__stats .featured__heading{ margin-bottom: 0; } " +
+                  ".hover-panel__stats .featured__table__column{ margin: 0; } ");
+    }
+
+    var $box = frogShared.hoverOuter;
+    if ($box == null) {
+      var $box = $("<div/>").addClass("global__image-outer-wrap hover-panel__outer-wrap").appendTo($("body")).hide();
+      frogShared.hoverOuter = $box;
+
+      var $hoverbox = $("<div/>").addClass("hover-panel__inner-wrap").appendTo($box);
+      $("<a/>").addClass("hover-panel__link").append($("<div/>").addClass("hover-panel__image")).appendTo($hoverbox);
+      $("<div/>").addClass("hover-panel__corner").appendTo($hoverbox);
+      $("<div/>").addClass("hover-panel__stats").appendTo($hoverbox);
+    }
+
+    var hoverTime, lastLoad = null,
+        $userAvs = $doc.find(".global__image-outer-wrap--avatar-small").not(".global__image-outer-wrap--missing-image").children();
+
+    $.each($userAvs, function(i, av) {
+      var $av = $(av);
+      if ((isUser && !~$av.parent().attr("href").indexOf("/user/")) 
+        || (!isUser && !~$av.parent().attr("href").indexOf("/group/"))) { return; }
+      
+      $av.hover(function(ev) {
+        var $this = $(this);
+
+        if (hoverTime) {
+          window.clearTimeout(hoverTime);
+          hoverTime = null;
+        }
+        hoverTime = window.setTimeout(function() {
+          var $parent = $this.parent();
+
+          //reset box for new load (unless same profile)
+          if ($parent.attr("href") != lastLoad) {
+            var $userimage = $box.find(".hover-panel__link"),
+                $userstats = $box.find(".hover-panel__stats"),
+                $usercorner = $box.find(".hover-panel__corner");
+            
+            $userimage.attr("href", $parent.attr("href"));
+            $userimage.find("div").css("background-image", $this.css("background-image"));
+            helpers.applyGradients($userstats.html(""), "#515763 0%, #2f3540 100%");
+            helpers.applyGradients($usercorner.html($("<i/>").addClass("hover-panel__icon-load fa fa-spin fa-circle-o-notch")), "#424751 0%, #2f3540 100%");
+
+            $.ajax({
+              method: "GET",
+              url: $parent.attr("href")
+            }).done(function(data) {
+              var $data = $(data);
+              lastLoad = $parent.attr("href");
+
+              var $suspend = $data.find(".sidebar__suspension-time"),
+                  $username = $("<div/>").addClass("featured__table__row__left").html($data.find(".featured__heading"));
+              if ($suspend.length) {
+                $username.find(".featured__heading__medium").css("color", "#000").attr("title", "Suspension length: "+ $suspend.text());
+              }
+
+              var base = $data.find(".featured__outer-wrap--user").css("background-color"),
+                  accent = $data.find(".featured__table__row__right").find("a").css("color"),
+                  $buttons = $data.find(".sidebar__shortcut-inner-wrap");
+
+              // bit of custom brightening since groups have no accent color
+              if (accent == null) {
+                var bright = base.substring(4, base.length-1).split(", ");
+                for(var i=0; i<bright.length; i++) {
+                  bright[i] = (+bright[i] + 30) * 3;
+                  if (bright[i] > 255) { bright[i] = 255; }
+                }
+                accent = "rgb("+ bright.join() +")";
+              }
+
+              $buttons.find(".js__submit-form-inner").remove();
+              $buttons.find("a").remove();
+              $usercorner.html($buttons);
+              helpers.applyGradients($usercorner, accent +" -120%, "+ base +" 65%");
+
+              $userstats.append($data.find(".featured__table__column").last()
+                        .prepend($("<div/>").addClass("featured__table__row").css("padding-top", "0").append($username)
+                        .append(isUser? $data.find(".featured__table__column").first().find(".featured__table__row__right")[2]:null)));
+              helpers.applyGradients($userstats, accent +" -20%, "+ base +" 80%");
+
+              if (isUser) {
+                var user = $parent.attr("href");
+                users.listenForLists(user, true);
+                users.tagging.injectEditor(user, true);
+              } else {
+                var group = $parent.attr("href").substring(7);
+                groups.tagging.injectEditor(group, true);
+              }
+            });
+          } else {
+            users.listenForLists(lastLoad, true); //removed when hidden, so re-add on showing same profile
+          }
+
+          var $target = $(ev.target);
+          var edge = 0;
+          if (($target.offset().left + width) > window.innerWidth) {
+            edge = ev.target.offsetWidth - width;
+          }
+
+          $box.show()
+              .css("left", $target.offset().left - 1 - parseInt($parent.css("padding-left")) + edge)
+              .css("top", $target.offset().top - 1 - parseInt($parent.css("padding-top")));
+        }, 250);
+      }, function() {
+        window.clearTimeout(hoverTime);
+      });
+    });
+
+    $(".hover-panel__outer-wrap").on("mouseleave", function() {
+      $box.hide();
+
+      $(".sidebar__shortcut__whitelist").off("click");
+      $(".sidebar__shortcut__blacklist").off("click");
+    });
+  },
   editor: function(isHover, setName, tagKey, tagTarget) {
-    var tag = frogTags[tagKey][tagTarget] || "Add Custom Tag",
+    var tag = frogTags[tagKey][tagTarget] || "Add Tag",
         ielm = "<i class='fa fa-tag fa-flip-horizontal' style='font-size: 14px;'></i> ";
     
     $("<div/>").attr("href", "#").html("<a>"+ ielm + tag +"</a>")
-      .css("color", $(".featured__table__row__right").find("a").css("color"))
+      .css("color", $(".featured__table__row__right").find("a").css("color") || $(".featured__table__row__right").css("color"))
       .on("click", function(ev) {
         var $div = $(this);
         if ($div.children("input").length) { return; } //don't reset input if already set
@@ -1456,7 +1485,7 @@ profiles = {
           
           if (code == 13) {
             var val = $(this).children("input").val();
-            $div.html("<a>"+ ielm + (val || "Add Custom Tag") +"</a>");
+            $div.html("<a>"+ ielm + (val || "Add Tag") +"</a>");
             $("a[href='/"+ setName +"/"+ tagTarget +"']").find("."+ setName +"__tagged").remove();
             
             if (val) {
@@ -1466,7 +1495,7 @@ profiles = {
                 $("a[href='/"+ setName +"/"+ tagTarget +"']").not(".global__image-outer-wrap").append(
                   $("<span/>").addClass(setName +"__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags[tagKey][tagTarget])
                 );
-                $("."+ setName +"-panel__outer-wrap").find("."+ setName +"__tagged").remove();
+                $(".hover-panel__outer-wrap").find("."+ setName +"__tagged").remove();
               }
             } else {
               delete frogTags[tagKey][tagTarget];
@@ -1475,14 +1504,14 @@ profiles = {
             
             $this.off("keypress");
           } else if (code == 27) {
-            $div.html("<a>"+ ielm + (frogTags[tagKey][tagTarget] || "Add Custom Tag") +"</a>");
+            $div.html("<a>"+ ielm + (frogTags[tagKey][tagTarget] || "Add Tag") +"</a>");
             $this.off("keypress");
           }
         });
         
         //highlight text on focus, reset on blur
         $div.find("input").select().focus().on("blur", function() { $div.html("<a>"+ ielm + tag +"</a>"); $(this).parent().off("keypress"); });
-      }).insertAfter((isHover? "."+ setName +"-panel__outer-wrap ":"") + ".featured__heading__medium");
+      }).insertAfter((isHover? ".hover-panel__outer-wrap ":"") + ".featured__heading__medium");
   }
 };
 pointless = {
@@ -1532,6 +1561,7 @@ pointless = {
     users.listIndication($document);
     users.listenForLists($(".featured__heading__medium").text());
     
+    groups.profileHover($document);
     groups.tagging.show();
     groups.tagging.injectEditor(location.pathname.substring(location.pathname.indexOf("/group/")+7));
 
