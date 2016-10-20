@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.7.1
+// @version      0.6.7.2
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1430,7 +1430,8 @@ profiles = {
               $usercorner.html($buttons);
               helpers.applyGradients($usercorner, accent +" -120%, "+ base +" 65%");
 
-              $userstats.append($data.find(".featured__table__column").last()
+              var $columns = $data.find(".featured__table__column");
+              $userstats.append((isUser? $columns.last():$columns.first())
                         .prepend($("<div/>").addClass("featured__table__row").css("padding-top", "0").append($username)
                         .append(isUser? $data.find(".featured__table__column").first().find(".featured__table__row__right")[2]:null)));
               helpers.applyGradients($userstats, accent +" -20%, "+ base +" 80%");
