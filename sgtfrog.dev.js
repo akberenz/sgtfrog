@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.7.4
+// @version      0.6.7.5
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -195,17 +195,17 @@ helpers = {
     return $a;
   },
   settings: {
-    makeRow: function($form, number, setting, details) {
+    makeRow: function($form, number, isSub, setting, details) {
       var $field;
       switch(details.set.type) {
         case "circle":
-          $field = helpers.settings.makeRadio(number, setting, details);
+          $field = helpers.settings.makeRadio(number, isSub, setting, details);
           break;
         case "square":
-          $field = helpers.settings.makeCheck(number, setting, details);
+          $field = helpers.settings.makeCheck(number, isSub, setting, details);
           break;
         case "number": case "text":
-          $field = helpers.settings.makeText(number, setting, details);
+          $field = helpers.settings.makeText(number, isSub, setting, details);
           break;
         default:
           logging.warn("Cannot determine options type: " + details.set.type);
@@ -224,20 +224,20 @@ helpers = {
         for(var i=0; i<subkeys.length; i++) {
           var k = subkeys[i];
           if (details.sub.settings.hasOwnProperty(k)) {
-            helpers.settings.makeRow($subform, number + set.substring(i,i+1), k, details.sub.settings[k]);
+            helpers.settings.makeRow($subform, number + set.substring(i,i+1), true, k, details.sub.settings[k]);
           }
         }
       }
     },
-    makeHeading: function(number, name) {
-      var $row = $("<div/>").addClass("form__row");
+    makeHeading: function(number, name, isSub) {
+      var $row = $("<div/>").addClass("form__row" + (isSub? " form__row__sub":""));
       $("<div/>").addClass("form__heading")
         .append($("<div/>").addClass("form__heading__number").html(number +"."))
         .append($("<div/>").addClass("form__heading__text").html(name))
         .appendTo($row);
       return $row;
     },
-    makeRadio: function(number, setting, details) {
+    makeRadio: function(number, isSub, setting, details) {
       var $input = $("<div/>").append($("<input/>").attr("type", "hidden").attr("name", setting).val(details.value));
       
       for(var i=0; i<details.set.opt.length; i++) {
@@ -256,9 +256,9 @@ helpers = {
         $input.append($radio);
       }
       
-      return helpers.settings.makeHeading(number, details.query).append($("<div/>").addClass("form__row__indent").append($input));
+      return helpers.settings.makeHeading(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($input));
     },
-    makeCheck: function(number, setting, details) {
+    makeCheck: function(number, isSub, setting, details) {
       var $input = $("<div/>").append($("<input/>").attr("type", "hidden").attr("name", setting).val(details.value));
       
       for(var i=0; i<details.set.opt.length; i++) {
@@ -290,9 +290,9 @@ helpers = {
           $input.append($check);
       }
       
-      return helpers.settings.makeHeading(number, details.query).append($("<div/>").addClass("form__row__indent").append($input));
+      return helpers.settings.makeHeading(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($input));
     },
-    makeText: function(number, setting, details) {
+    makeText: function(number, isSub, setting, details) {
       var $indent = $("<div/>").addClass("form__row__indent");
       
       $.each(details.set.opt, function(i, opt) {
@@ -310,7 +310,7 @@ helpers = {
       
       var $desc = $("<div/>").addClass("form__input-description").html(details.set.about);
       
-      return helpers.settings.makeHeading(number, details.query).append($indent.append($desc));
+      return helpers.settings.makeHeading(number, details.query, isSub).append($indent.append($desc));
     }
   },
   applyGradients: function(elm, range) {
@@ -364,7 +364,9 @@ settings = {
     if (location.pathname === "/%C4%85ccount/settings/ribbit") {
       logging.info("Creating custom settings page");
       
-      GM_addStyle("body{ background-image: none; background-color: #95A4C0; }");
+      GM_addStyle("body{ background-image: none; background-color: #95A4C0; } " +
+                  ".form__row__sub{ margin-left: 2.5em; } " +
+                  ".form__row__sub .form__heading__text{ color: #5A89FF; }");
       
       var $dark = $("style").detach(); //compatibility with dark theme
       $("html").empty();
@@ -398,7 +400,7 @@ settings = {
         for(var i=0; i<keys.length; i++) {
           var k = keys[i];
           if (frogVars.hasOwnProperty(k)) {
-            helpers.settings.makeRow($form, i+1, k, frogVars[k]);
+            helpers.settings.makeRow($form, i+1, false, k, frogVars[k]);
           }
         }
         
