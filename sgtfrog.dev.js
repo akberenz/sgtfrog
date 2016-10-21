@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.7.2
+// @version      0.6.7.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -63,25 +63,6 @@ var frogTracks = {
 };
 
 var frogShared = {};
-
-
-//// TODO - REMOVE FOLLOWING CODE ////
-
-//temporary measure to pull buggy group tags over to implemented system
-for(var tuk in frogTags.users) {
-    if (frogTags.users.hasOwnProperty(tuk)) {
-        if (tuk.indexOf("/group/") == 0) {
-            console.debug("Found old group tag => " + tuk);
-            frogTags.groups[tuk.substring(7)] = frogTags.users[tuk];
-            delete frogTags.users[tuk];
-        }
-    }
-}
-
-GM_setValue("userTags", JSON.stringify(frogTags.users));
-GM_setValue("groupTags", JSON.stringify(frogTags.groups));
-
-//// ----- ////
 
 
 // Functions //
