@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.7.3
+// @version      0.6.7.4
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -42,13 +42,17 @@ var frogVars = {
   activeTalk: { value: GM_getValue("activeTalk", 2), set: { type: "circle", opt: ["Yes", "Sidebar", "No"] }, query: "Show the 'Active Discussions' section?" },
   collapsed:  { value: GM_getValue("collapsed",  3), set: { type: "square", opt: ["Discussions", "Trades"] }, query: "After first page, collapse original post:" },
   tracking:   { value: GM_getValue("tracking",   0), set: { type: "square", opt: ["Discussions", "Trades"] }, query: "Track read comments and topics:" },
-  userTools:  { value: GM_getValue("userTools",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show SGTools links on user pages?" },
+  userTools:  { value: GM_getValue("userTools",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show SGTools links on user pages?",
+                sub: { name: "Configure", settings: {
+                  toolsOrdering: { value: GM_getValue("toolsOrdering", 1), set: { type: "circle", opt: ["Ascending", "Descending"] }, query: "Result ordering:" }
+                } }
+              },
   hoverInfo:  { value: GM_getValue("userDetail", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show profile details on avatar hover?" },
   customTags: { value: GM_getValue("customTags", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Allow tagging of users and groups?" },
   userLists:  { value: GM_getValue("userLists",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Label black-/white- listed users?",
                 sub: { name: "Configure", settings: {
-                    userWhite: { value: JSON.parse(GM_getValue("userWhite", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }, query: "Whitelisted label colors:" }, 
-                    userBlack: { value: JSON.parse(GM_getValue("userBlack", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }, query: "Blacklisted label colors:" }
+                  userWhite: { value: JSON.parse(GM_getValue("userWhite", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }, query: "Whitelisted label colors:" }, 
+                  userBlack: { value: JSON.parse(GM_getValue("userBlack", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }, query: "Blacklisted label colors:" }
                 } }
               }
 };
@@ -707,15 +711,16 @@ sidebar = {
   injectSGTools: function() {
     if (!frogVars.userTools.value || !~location.pathname.indexOf("/user/")) { return; }
 
-    var userViewed = location.href.split("/")[4];
+    var userViewed = location.href.split("/")[4],
+        ordering = frogVars.userTools.sub.settings.toolsOrdering.value? "/oldestfirst":"/newestfirst";
     logging.debug("Found user: " + userViewed);
-    
+
     var $sideentry = $(".sidebar__navigation").last(),
         $tools = $("<ul/>").append(
-        helpers.makeSideLink("http://www.sgtools.info/sent/" + userViewed, "Real Value Sent").find("a").attr("target", "_check"),
-        helpers.makeSideLink("http://www.sgtools.info/won/" + userViewed, "Real Value Won").find("a").attr("target", "_check"),
-        helpers.makeSideLink("http://www.sgtools.info/nonactivated/" + userViewed, "Non-Activated").find("a").attr("target", "_check"),
-        helpers.makeSideLink("http://www.sgtools.info/multiple/" + userViewed, "Multi Wins").find("a").attr("target", "_check")
+        helpers.makeSideLink("http://www.sgtools.info/sent/" + userViewed + ordering, "Real Value Sent").find("a").attr("target", "_checkSent"),
+        helpers.makeSideLink("http://www.sgtools.info/won/" + userViewed + ordering, "Real Value Won").find("a").attr("target", "_checkWon"),
+        helpers.makeSideLink("http://www.sgtools.info/nonactivated/" + userViewed + ordering, "Non-Activated").find("a").attr("target", "_checkNon"),
+        helpers.makeSideLink("http://www.sgtools.info/multiple/" + userViewed, "Multi Wins").find("a").attr("target", "_checkMulti")
     );
 
     $("<h3/>").html("SG Tools").addClass("sidebar__heading").insertAfter($sideentry)
