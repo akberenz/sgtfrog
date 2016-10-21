@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.7.5
+// @version      0.6.7.6
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1393,10 +1393,18 @@ profiles = {
               var $data = $(data);
               lastLoad = $parent.attr("href");
 
-              var $suspend = $data.find(".sidebar__suspension-time"),
+              //apply role colors
+              var $suspension = $data.find(".sidebar__suspension"),
+                  $userrole = $data.find("[href^='/roles/']").text(),
                   $username = $("<div/>").addClass("featured__table__row__left").html($data.find(".featured__heading"));
-              if ($suspend.length) {
-                $username.find(".featured__heading__medium").css("color", "#000").attr("title", "Suspension length: "+ $suspend.text());
+                  
+              if ($suspension.length) {
+                var $time = $data.find(".sidebar__suspension-time");
+                $username.find(".featured__heading__medium").css("color", "#000")
+                         .attr("title", $suspension.text() + ($time.length? (":"+ $time.text()):""));
+              } else {
+                var colorSet = { "Guest": "#777", "Member": "#FFF", "Bundler": "#FBF", "Developer": "#BDF", "Support": "#FF6", "Moderator": "#AF6", "Super Mod": "#6FA", "Admin": "#6FF"};
+                $username.find(".featured__heading__medium").css("color", colorSet[$userrole]).attr("title", $userrole);
               }
 
               var base = $data.find(".featured__outer-wrap--user").css("background-color"),
