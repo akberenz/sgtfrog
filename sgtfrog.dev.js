@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.7.7
+// @version      0.6.7.8
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1099,25 +1099,13 @@ threads = {
   },
   injectTimes: function($doc) {
     if (!~location.href.indexOf("/discussion/") && !~location.href.indexOf("/trade/")) { return; }
-    
+
     $.each($doc.find(".comment__actions"), function(i, elm) {
       var $edit = $($(elm).children().first().children()[1]);
       
       if ($edit.length) {
-        var d,
-            pullDate = $edit.attr("title").replace(/Edited:/, ""),
-            time = pullDate.match(/(\w+ \d+, \d{4}|Yesterday|Today), (\d+):(\d{2})(am|pm)/i);          
-        if (time[1] === "Today" || time[1] === "Yesterday") {
-            d = new Date();
-            if (time[1] === "Yesterday") {
-                d.setDate(d.getDate()-1);
-            }
-        } else {
-            d = new Date(time[1]);
-        }
-        d.setHours(+time[2] + ((+time[2] < 12 && time[4] == "pm")? 12:0) - (+time[2] == 12 && time[4] == "am"? 12:0), +time[3], 0, 0);
-        
-        logging.debug(pullDate +"-->"+ d.toString());
+        var d = new Date($edit.attr("data-timestamp") * 1000);
+        logging.debug(d.toString());
         
         var show, interval, 
             seconds = Math.floor((new Date() - d) / 1000);
@@ -1194,7 +1182,7 @@ threads = {
         if (id && !~frogTracks[set][tag].indexOf(id)) {
           frogTracks[set][tag].push(id);
           var $when = $summary.find(".comment__actions").find("span");
-          $when.addClass("icon-green").attr("title", 'New ' + $when.attr("title"));
+          $when.parent().addClass("icon-green").attr("title", 'New ' + $when.attr("title"));
           findings++;
         }
       });
@@ -1585,13 +1573,18 @@ pointless = {
     window.setTimeout(function() {
       $document.scroll();
 
-      giveaways.bulkFeatured.find();
-      threads.collapseDiscussion();
-      threads.collapseTrade();
+      try {
+        giveaways.bulkFeatured.find();
+        threads.collapseDiscussion();
+        threads.collapseTrade();
+      }
+      catch(err) {
+        logging.alert(err);
+      }
     }, 100);
   }
   catch(err) {
-    logging.warn(err);
+    logging.alert(err);
   }
 })();
 
