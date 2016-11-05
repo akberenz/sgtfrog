@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.7.6
+// @version      0.6.7.7
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -42,7 +42,7 @@ var frogVars = {
   activeTalk: { value: GM_getValue("activeTalk", 2), set: { type: "circle", opt: ["Yes", "Sidebar", "No"] }, query: "Show the 'Active Discussions' section?" },
   collapsed:  { value: GM_getValue("collapsed",  3), set: { type: "square", opt: ["Discussions", "Trades"] }, query: "After first page, collapse original post:" },
   tracking:   { value: GM_getValue("tracking",   0), set: { type: "square", opt: ["Discussions", "Trades"] }, query: "Track read comments and topics:" },
-  userTools:  { value: GM_getValue("userTools",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show SGTools links on user pages?",
+  userTools:  { value: GM_getValue("userTools",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show SGTools links on user and winner pages?",
                 sub: { name: "Configure", settings: {
                   toolsOrdering: { value: GM_getValue("toolsOrdering", 1), set: { type: "circle", opt: ["Ascending", "Descending"] }, query: "Result ordering:" }
                 } }
@@ -918,6 +918,23 @@ giveaways = {
       .append("<i class='fa fa-search'></i>");
     $(".nav__left-container").prepend($search);
   },
+  injectWinnerTools: function() {
+    if (!frogVars.userTools.value || !~location.pathname.indexOf("/winners")) { return; } //controlled by SGTools sidepanel option
+    if ($(".featured__column [href='"+ $(".nav__avatar-outer-wrap").attr("href")+"']").length == 0) { return; } //only inject on your own winner pages
+    
+    var ordering = frogVars.userTools.sub.settings.toolsOrdering.value? "/oldestfirst":"/newestfirst";
+    
+    $.each($(".table__row-outer-wrap"), function(i, row) {
+      var $head = $(row).find("p.table__column__heading");
+      var user = $head.text();
+      
+      $head.css("display", "inline-block")
+            .after($("<a/>").addClass("table__column__secondary-link").css("margin-left",".5em").text("(Check multi-wins)")
+                            .attr("href", "http://www.sgtools.info/multiple/" + user).attr("target", "_checkMulti"))
+            .after($("<a/>").addClass("table__column__secondary-link").css("margin-left", ".5em").text("(Check non-activated)")
+                            .attr("href", "http://www.sgtools.info/nonactivated/" + user + ordering).attr("target", "_checkNon"));
+    });
+  },
   hideEntered: function($doc) {
     if (!frogVars.hideEntry.value || ~location.href.indexOf("/user/") || ~location.href.indexOf("/group/")) { return; } //exclude hiding anything on user or group pages
     $doc.find(".is-faded").parent(".giveaway__row-outer-wrap").remove();
@@ -1401,7 +1418,7 @@ profiles = {
               if ($suspension.length) {
                 var $time = $data.find(".sidebar__suspension-time");
                 $username.find(".featured__heading__medium").css("color", "#000")
-                         .attr("title", $suspension.text() + ($time.length? (":"+ $time.text()):""));
+                         .attr("title", $suspension.text() + ($time.length? (": "+ $time.text()):""));
               } else {
                 var colorSet = { "Guest": "#777", "Member": "#FFF", "Bundler": "#FBF", "Developer": "#BDF", "Support": "#FF6", "Moderator": "#AF6", "Super Mod": "#6FA", "Admin": "#6FF"};
                 $username.find(".featured__heading__medium").css("color", colorSet[$userrole]).attr("title", $userrole);
@@ -1546,6 +1563,7 @@ pointless = {
     giveaways.easyHide($document);
     giveaways.gridForm($document);
     giveaways.activeThreads.find();
+    giveaways.injectWinnerTools();
 
     sidebar.removeMyGA();
     sidebar.injectSGTools();
