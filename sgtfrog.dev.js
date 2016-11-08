@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.7.8
+// @version      0.6.7.9
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -379,11 +379,14 @@ settings = {
         //clear copied page out
         var head = data.substring(data.indexOf("<head>")+6, data.indexOf("</head>"))
           .replace(/<script [\s\S]+?<\/script>/g, ""); //remove problematic scripts
-        $("<head/>").appendTo("html").append(head)
-          .append("<script src='https://cdn.steamgifts.com/js/minified.js'></script>");
+        $("<head/>").appendTo("html").append(head);
         $("<body/>").appendTo("html")
           .append(data.substring(data.indexOf("<body>")+6, data.indexOf("</body>")));
         $dark.appendTo("html");
+        
+        //pull latest site js
+        var jsIndex = data.indexOf("<script src=\"'https://cdn.steamgifts.com/js/minified");
+        $("head").append($(data.substring(jsIndex, data.indexOf("</script>", jsIndex))));
         
         //re-skin
         $(".page__heading__breadcrumbs").children("a").last()
