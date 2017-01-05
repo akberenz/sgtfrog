@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.7.0
+// @version      0.7.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -93,7 +93,7 @@ var frogShared = {};
 
 
 // Functions //
-var debug = 0, // 0 off, -1 info, -2 trace
+var debug = -2, // 0 off, -1 info, -2 trace
 logging = {
   debug: function(message) {
     if (debug < -1) {
@@ -394,9 +394,11 @@ settings = {
       $("html").empty();
    
       //copy an existing page to match layout
+      var usePage = "/account/settings/giveaways";
+      
       $.ajax({
         method: "GET",
-        url: "/account/settings/sales"
+        url: usePage
       }).done(function(data) {
         //clear copied page out
         var head = data.substring(data.indexOf("<head>")+6, data.indexOf("</head>"))
@@ -413,7 +415,7 @@ settings = {
         //re-skin
         $(".page__heading__breadcrumbs").children("a").last()
           .html("Sgt Frog").attr("href", "/ąccount/settings/ribbit");
-        $(".sidebar__navigation").find("a[href='/account/settings/sales']").parent()
+        $(".sidebar__navigation").find("a[href='" + usePage + "']").parent()
           .removeClass("is-selected").find("i").remove();
         $("title").html("Account - Settings - Ribbit");
         
