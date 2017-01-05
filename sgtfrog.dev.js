@@ -5,13 +5,14 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.6.7.9
+// @version      0.7.0
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
 // @grant        GM_addStyle
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant		 GM_deleteValue
 // ==/UserScript==
 */
 
@@ -23,11 +24,34 @@ if ($(".nav__sits").length) {
   throw new Error("No lilypad.");
 }
 
+// convert out variables with 'Trade' values // REMOVE CODE AFTER UPDATES //
+(function() {
+	//keep discuss if set
+	if (GM_getValue("collapsed") & 2) {
+		GM_setValue("collapsed", 1);
+	} // else OFF or never set
+	
+	//keep discuss if set
+	if (GM_getValue("tracking") & 2) {
+		GM_setValue("tracking", 1);
+	} // else OFF or never set
+	
+	//remove trade if set
+	var loads = GM_getValue("loadLists", 15);
+	if (loads & 2) {
+		var now = (loads&8?4:0) | (loads&4?2:0) | (loads&1?1:0);
+		GM_setValue("loadLists", now);
+	} // else OFF or never set
+	
+	GM_deleteValue("tracks[trade]");
+})();
+// end removal //
+
 
 // Variables //
 var frogVars = {
   fixedElms:  { value: GM_getValue("fixedElms",  6), set: { type: "square", opt: ["Header", "Sidebar", "Footer"] }, query: "Set fixed elements:" },
-  loadLists:  { value: GM_getValue("loadLists", 15), set: { type: "square", opt: ["Giveaways", "Discussions", "Trades", "Comments"] }, query: "Continuously load:" },
+  loadLists:  { value: GM_getValue("loadLists",  7), set: { type: "square", opt: ["Giveaways", "Discussions", "Comments"] }, query: "Continuously load:" },
   gridView:   { value: GM_getValue("gridView",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show giveaways in a grid view?" },
   featuredGA: { value: GM_getValue("featuredGA", 2), set: { type: "circle", opt: ["Yes", "Expanded", "No"] }, query: "Show featured giveaways section?" },
   hideEntry:  { value: GM_getValue("hideEntry",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Hide entered giveaways?" },
@@ -40,8 +64,8 @@ var frogVars = {
   pointInvl:  { value: GM_getValue("pointInvl",  0), set: { type: "number", opt: ["Seconds"], about: "Value in seconds, enter 0 to disable." }, query: "Regularly update header values (points, messages, etc.)?" },
   sideMine:   { value: GM_getValue("sideMine",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Hide 'My Giveaways' in the sidebar? (Still available under nav dropdown)" },
   activeTalk: { value: GM_getValue("activeTalk", 2), set: { type: "circle", opt: ["Yes", "Sidebar", "No"] }, query: "Show the 'Active Discussions' section?" },
-  collapsed:  { value: GM_getValue("collapsed",  3), set: { type: "square", opt: ["Discussions", "Trades"] }, query: "After first page, collapse original post:" },
-  tracking:   { value: GM_getValue("tracking",   0), set: { type: "square", opt: ["Discussions", "Trades"] }, query: "Track read comments and topics:" },
+  collapsed:  { value: GM_getValue("collapsed",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "After first page, collapse original discussion post:" },
+  tracking:   { value: GM_getValue("tracking",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Track read comments and topics on discussions:" },
   userTools:  { value: GM_getValue("userTools",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show SGTools links on user and winner pages?",
                 sub: { name: "Configure", settings: {
                   toolsOrdering: { value: GM_getValue("toolsOrdering", 1), set: { type: "circle", opt: ["Ascending", "Descending"] }, query: "Result ordering:" }
@@ -62,8 +86,7 @@ var frogTags = {
   groups: JSON.parse(GM_getValue("groupTags", '{}'))
 };
 var frogTracks = {
-  discuss: JSON.parse(GM_getValue("tracks[discuss]", '{}')),
-  trade: JSON.parse(GM_getValue("tracks[trade]", '{}'))
+  discuss: JSON.parse(GM_getValue("tracks[discuss]", '{}'))
 };
 
 var frogShared = {};
@@ -104,8 +127,7 @@ helpers = {
     return urlParams[name];
   },
   isGAlist: function() {
-    return !(~location.href.indexOf("/trade")
-      || ~location.href.indexOf("/discussion")
+    return !(~location.href.indexOf("/discussion")
       || ~location.href.indexOf("/giveaway/")
       || ~location.href.indexOf("/account/")
       || ~location.href.indexOf("/archive")
@@ -605,10 +627,6 @@ loading = {
       }
     });
   },
-  trade: function() {
-    if (!(frogVars.loadLists.value & 2) || !~location.href.indexOf("/trade/")) { return; }
-    loading.comments();
-  },
   threads: function() {
     if (!(frogVars.loadLists.value & 4) || !~location.href.indexOf("/discussion/")) { return; }
     loading.comments();
@@ -1085,15 +1103,7 @@ giveaways = {
 threads = {
   //NOTE: needs delayed from page load
   collapseDiscussion: function() {
-    if (!(frogVars.collapsed.value & 2) || !~location.href.indexOf("/discussion/")) { return; }
-
-    var page = helpers.fromQuery("page");
-    if (page && page > 1) {
-      $(".comment__collapse-button").first().trigger("click");
-    }
-  },
-  collapseTrade: function() {
-    if (!(frogVars.collapsed.value & 1) || !~location.href.indexOf("/trade/")) { return; }
+    if (!frogVars.collapsed.value || !~location.href.indexOf("/discussion/")) { return; }
 
     var page = helpers.fromQuery("page");
     if (page && page > 1) {
@@ -1101,7 +1111,7 @@ threads = {
     }
   },
   injectTimes: function($doc) {
-    if (!~location.href.indexOf("/discussion/") && !~location.href.indexOf("/trade/")) { return; }
+    if (!~location.href.indexOf("/discussion/")) { return; }
 
     $.each($doc.find(".comment__actions"), function(i, elm) {
       var $edit = $($(elm).children().first().children()[1]);
@@ -1146,11 +1156,8 @@ threads = {
   },
   tracking: {
     all: function($doc) {
-      if ((frogVars.tracking.value & 2) && ~location.pathname.indexOf("/discussions")) { threads.tracking.lists("discuss"); }
-      if ((frogVars.tracking.value & 1) && ~location.pathname.indexOf("/trades")) { threads.tracking.lists("trade"); }
-      
-      if ((frogVars.tracking.value & 2) && ~location.pathname.indexOf("/discussion/")) { threads.tracking.posts("discuss", $doc); }
-      if ((frogVars.tracking.value & 1) && ~location.pathname.indexOf("/trade/")) { threads.tracking.posts("trade", $doc); }
+      if (frogVars.tracking.value && ~location.pathname.indexOf("/discussions")) { threads.tracking.lists("discuss"); }
+      if (frogVars.tracking.value && ~location.pathname.indexOf("/discussion/")) { threads.tracking.posts("discuss", $doc); }
     },
     lists: function(set) {
       var $rows = $(".table__row-outer-wrap");
@@ -1540,7 +1547,6 @@ pointless = {
     fixedElements.sidebar();
     fixedElements.footer();
 
-    loading.trade();
     loading.threads();
     loading.thanks();
     loading.giveaways();
@@ -1579,7 +1585,6 @@ pointless = {
       try {
         giveaways.bulkFeatured.find();
         threads.collapseDiscussion();
-        threads.collapseTrade();
       }
       catch(err) {
         logging.alert(err);
