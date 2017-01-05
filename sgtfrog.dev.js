@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.7.1
+// @version      0.7.2
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -897,34 +897,26 @@ giveaways = {
     });
   },
   injectSearch: function($doc, hasStyle) {
-    if (!frogVars.searchSame.value) { return; }
+    if (!frogVars.searchSame.value || !~location.href.indexOf("/giveaway/")) { return; }
     
-    $.each($doc.find(".giveaway__heading"), function(i, heading) {
-      var $heading = $(heading);
-      $("<a/>").addClass("giveaway__icon").html("<i class='fa fa-search-plus'></i>").attr("title", "Find similar giveaways")
-        .attr("href", "/giveaways/search?q=" + $heading.find(".giveaway__heading__name").html()).appendTo($heading);
-    });
-    
-    if (~location.href.indexOf("/giveaway/")) {
-      if (!hasStyle) {
-        GM_addStyle(".sidebar__shortcut-inner-wrap div{ padding: 0; } " + 
-                   ".sidebar__shortcut-inner-wrap .sidebar__error{ border-color: #f0d1dc #e5bccc #d9a7ba #ebbecf; }");
-      }
-      
-      var $side = $(".sidebar__navigation").parent();
-      var $entry = $side.children().first().not(".sidebar__mpu").detach();
-      if (!$entry.hasClass("sidebar__error")) {
-        $entry.css("background-image", "none").css("border", "none");
-      } else {
-        helpers.applyGradients($entry, "#f7edf1 0%, #e6d9de 100%");
-      }
-      
-      $("<div/>").addClass("sidebar__shortcut-inner-wrap")
-        .append($("<a/>").addClass("sidebar__entry-loading").css("max-width", ($entry.length>0? "33%":"100%")).html("<i class='fa fa-search'></i> Find Similar")
-               .attr("href", "/giveaways/search?q=" + $(".featured__heading__medium").html()))
-        .append($entry)
-        .appendTo($("<div/>").addClass("sidebar__shortcut-outer-wrap").prependTo($side))
+    if (!hasStyle) {
+      GM_addStyle(".sidebar__shortcut-inner-wrap div{ padding: 0; } " + 
+                 ".sidebar__shortcut-inner-wrap .sidebar__error{ border-color: #f0d1dc #e5bccc #d9a7ba #ebbecf; }");
     }
+    
+    var $side = $(".sidebar__navigation").parent();
+    var $entry = $side.children().first().not(".sidebar__mpu").detach();
+    if (!$entry.hasClass("sidebar__error")) {
+      $entry.css("background-image", "none").css("border", "none");
+    } else {
+      helpers.applyGradients($entry, "#f7edf1 0%, #e6d9de 100%");
+    }
+    
+    $("<div/>").addClass("sidebar__shortcut-inner-wrap")
+      .append($("<a/>").addClass("sidebar__entry-loading").css("max-width", ($entry.length>0? "33%":"100%")).html("<i class='fa fa-search'></i> Find Similar")
+             .attr("href", "/giveaways/search?q=" + $(".featured__heading__medium").html()))
+      .append($entry)
+      .appendTo($("<div/>").addClass("sidebar__shortcut-outer-wrap").prependTo($side))
   },
   injectNavSearch: function() {
     if (!frogVars.searchNav.value) { return; }
