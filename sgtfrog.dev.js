@@ -5,10 +5,11 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.7.2
+// @version      0.7.2.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
+// @require		 https://cdnjs.cloudflare.com/ajax/libs/showdown/1.5.4/showdown.min.js
 // @grant        GM_addStyle
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -26,24 +27,27 @@ if ($(".nav__sits").length) {
 
 // convert out variables with 'Trade' values // REMOVE CODE AFTER UPDATES //
 (function() {
-	//keep discuss if set
-	if (GM_getValue("collapsed") & 2) {
-		GM_setValue("collapsed", 1);
-	} // else OFF or never set
-	
-	//keep discuss if set
-	if (GM_getValue("tracking") & 2) {
-		GM_setValue("tracking", 1);
-	} // else OFF or never set
-	
-	//remove trade if set
-	var loads = GM_getValue("loadLists", 15);
-	if (loads & 2) {
-		var now = (loads&8?4:0) | (loads&4?2:0) | (loads&1?1:0);
-		GM_setValue("loadLists", now);
-	} // else OFF or never set
-	
-	GM_deleteValue("tracks[trade]");
+	if (!GM_getValue("removedTrade", false)) {
+		//keep discuss if set
+		if (GM_getValue("collapsed") & 2) {
+			GM_setValue("collapsed", 1);
+		} // else OFF or never set
+		
+		//keep discuss if set
+		if (GM_getValue("tracking") & 2) {
+			GM_setValue("tracking", 1);
+		} // else OFF or never set
+		
+		//remove trade if set
+		var loads = GM_getValue("loadLists", 15);
+		if (loads & 2) {
+			var now = (loads&8?4:0) | (loads&4?2:0) | (loads&1?1:0);
+			GM_setValue("loadLists", now);
+		} // else OFF or never set
+		
+		GM_deleteValue("tracks[trade]");
+		GM_setValue("removedTrade", true);
+	}
 })();
 // end removal //
 
@@ -282,7 +286,7 @@ helpers = {
     },
     makeCheck: function(number, isSub, setting, details) {
       var $input = $("<div/>").append($("<input/>").attr("type", "hidden").attr("name", setting).val(details.value));
-      
+
       for(var i=0; i<details.set.opt.length; i++) {
         var val = Math.pow(2, details.set.opt.length - 1 - i); //values bitwise OR'd together
         var $check = $("<div/>").addClass("form__checkbox").attr("data-checkbox-value", val)
@@ -427,6 +431,7 @@ settings = {
         for(var i=0; i<keys.length; i++) {
           var k = keys[i];
           if (frogVars.hasOwnProperty(k)) {
+			  console.log(k, frogVars[k]);
             helpers.settings.makeRow($form, i+1, false, k, frogVars[k]);
           }
         }
@@ -564,7 +569,7 @@ loading = {
   },
   giveaways: function() {
     //avoid stepping on other loading pages
-    if (!(frogVars.loadLists.value & 8) || !helpers.isGAlist()) {
+    if (!(frogVars.loadLists.value & 4) || !helpers.isGAlist()) {
       return;
     }
     
@@ -630,7 +635,7 @@ loading = {
     });
   },
   threads: function() {
-    if (!(frogVars.loadLists.value & 4) || !~location.href.indexOf("/discussion/")) { return; }
+    if (!(frogVars.loadLists.value & 2) || !~location.href.indexOf("/discussion/")) { return; }
     loading.comments();
   },
   thanks: function() {
