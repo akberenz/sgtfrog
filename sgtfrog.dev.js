@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.7.2.2
+// @version      0.7.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -650,6 +650,19 @@ loading = {
     if (page == undefined) { page = 1; }
     var lastPage = $(".pagination__navigation").children().last().attr('data-page-number');
     $(".page__heading").last().after($(".pagination").detach());
+	
+	//prevent multiple occurences from cancelling a reply
+	$(".js__comment-reply-cancel").on("click", function(e) {
+		//SG calls
+		$(".comment--submit input[name=parent_id]").val("");
+		$(".comment--submit .comment__child").attr("class", "comment__parent");
+		
+		//alternate movement calls
+		var $box = $(".comment--submit").detach();
+		$box.insertAfter($(".comments").last());
+		
+		e.stopImmediatePropagation();
+	});
 
     var inload = false;
     $document.on("scroll", function() {
