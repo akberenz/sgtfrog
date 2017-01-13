@@ -5,11 +5,11 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.7.3
+// @version      0.8.0
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
-// @require		 https://cdnjs.cloudflare.com/ajax/libs/showdown/1.5.4/showdown.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/showdown/1.5.4/showdown.min.js
 // @grant        GM_addStyle
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -51,7 +51,6 @@ if ($(".nav__sits").length) {
 })();
 // end removal //
 
-
 // Variables //
 var frogVars = {
   fixedElms:  { value: GM_getValue("fixedElms",  6), set: { type: "square", opt: ["Header", "Sidebar", "Footer"] }, query: "Set fixed elements:" },
@@ -70,12 +69,13 @@ var frogVars = {
   activeTalk: { value: GM_getValue("activeTalk", 2), set: { type: "circle", opt: ["Yes", "Sidebar", "No"] }, query: "Show the 'Active Discussions' section?" },
   collapsed:  { value: GM_getValue("collapsed",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "After first page, collapse original discussion post:" },
   tracking:   { value: GM_getValue("tracking",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Track read comments and topics on discussions:" },
+  preview:    { value: GM_getValue("preview",    1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Allow preview of posts before submitting?" },
   userTools:  { value: GM_getValue("userTools",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show SGTools links on user and winner pages?",
                 sub: { name: "Configure", settings: {
                   toolsOrdering: { value: GM_getValue("toolsOrdering", 1), set: { type: "circle", opt: ["Ascending", "Descending"] }, query: "Result ordering:" }
                 } }
               },
-  hoverInfo:  { value: GM_getValue("userDetail", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show profile details on avatar hover?" },
+  hoverInfo:  { value: GM_getValue("hoverInfo",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show profile details on avatar hover?" },
   customTags: { value: GM_getValue("customTags", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Allow tagging of users and groups?" },
   userLists:  { value: GM_getValue("userLists",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Label black-/white- listed users?",
                 sub: { name: "Configure", settings: {
@@ -343,6 +343,86 @@ helpers = {
     elm.css("background-image", "linear-gradient(" + range +")")
       .css("background-image", "-moz-linear-gradient(" + range +")")
       .css("background-image", "-webkit-linear-gradient(" + range +")");
+  },
+  markdown: {
+    setupShowdown: function() {
+      var subExts = [
+        {
+          // Strip HTML
+          type: "lang",
+          filter: function(text) {
+            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          }
+        },
+        {
+          // HTTP as link
+          type: "lang",
+          regex: /(^|\s)(http.*?)(\s|$)/gi,
+          replace: "$1[$2]($2)$3"
+        },
+        {
+          // Site-less links as invalid
+          type: "lang",
+          regex: /(\[.*?])\(\)/g,
+          replace: "$1\\(\\)"
+        },
+        {
+          // Strikeout or Spoiler
+          type: "lang",
+          filter: function(text) {
+            return text.replace(/(?:~T){2}([\s\S]+?)(?:~T){2}/g, "<del>$1</del>") //strikethrough
+                       .replace(/(?:~T)([\s\S]+?)(?:~T)/g, "<span class='spoiler'>$1</span>"); //spoiler
+          }
+        },
+        {
+          // Images as toggle
+          type: "lang",
+          regex: /!\[(.*)?]\((.+)\)/g,
+          replace: "<div>\n<div class='comment__toggle-attached'>View attached image.</div>" +
+                    "<a href='$2' rel='nofollow noreferrer' target='_blank'>" +
+                    "<img class='is-hidden' alt='$1' title='$1' src='$2'>" +
+                    "</a></div>\n<br/>"
+        },
+        {
+          // Images to bottom
+          type: "output",
+          filter: function(html) {
+            var $whole = $("<div/>").append($(html)),
+                $images = $whole.find(".comment__toggle-attached").parent().detach();
+            
+            $whole.append($images);
+            
+            return $whole.html();
+          }
+        },
+        {
+          // Fix line breaks
+          type: "output",
+          filter: function(html) {
+            return html.replace(/(<p><br\/?><\/p>|^\n$)/gm, "").replace(/(^(?!.*p>$).+)(<\/(a|span|del|em|code)>|[^>])\n/gm, "$1$2<br/>");
+          }
+        }
+      ];
+      
+      showdown.extension("SGMD", function() { return subExts; });
+    },
+    getConverter: function() {
+      if (helpers.markdown.converter == null) {
+        helpers.markdown.setupShowdown();
+        helpers.markdown.converter = new showdown.Converter({
+          tables: true,
+          noHeaderId: true,
+          simpleLineBreaks: true,
+          excludeTrailingPunctuationFromURLs: true,
+          extensions: ["SGMD"]
+        });
+      }
+      
+      return helpers.markdown.converter;
+    },
+    parse: function(raw) {
+      return helpers.markdown.getConverter().makeHtml(raw);
+    }
   }
 },
 
@@ -431,7 +511,6 @@ settings = {
         for(var i=0; i<keys.length; i++) {
           var k = keys[i];
           if (frogVars.hasOwnProperty(k)) {
-			  console.log(k, frogVars[k]);
             helpers.settings.makeRow($form, i+1, false, k, frogVars[k]);
           }
         }
@@ -555,17 +634,27 @@ loading = {
   removeSpinner: function() {
     $(".pagination__loader").remove();
   },
-  everyNew: function($doc) {
-    giveaways.injectFlags.wishlist($doc, true);
-    giveaways.injectFlags.recent($doc, true);
-    giveaways.injectChance($doc);
-    giveaways.injectSearch($doc, true);
-    giveaways.hideEntered($doc);
-    giveaways.easyHide($doc);
-    giveaways.gridForm($doc, true);
-    users.profileHover($doc, true);
-    users.tagging.show($doc, true);
-    users.listIndication($doc, true);
+  everyNew: {
+    giveawayPage: function($doc) {
+      giveaways.injectFlags.wishlist($doc, true);
+      giveaways.injectFlags.recent($doc, true);
+      giveaways.injectChance($doc);
+      giveaways.injectSearch($doc, true);
+      giveaways.hideEntered($doc);
+      giveaways.easyHide($doc);
+      giveaways.gridForm($doc, true);
+      users.profileHover($doc, true);
+      users.tagging.show($doc, true);
+      users.listIndication($doc, true);
+    },
+    commentPage: function($doc) {
+      users.profileHover($doc, true);
+      users.tagging.show($doc, true);
+      users.listIndication($doc, true);
+      threads.injectTimes($doc);
+      threads.tracking.all($doc);
+      threads.commentBox.injectEditPreview($doc);
+    }
   },
   giveaways: function() {
     //avoid stepping on other loading pages
@@ -606,7 +695,7 @@ loading = {
           url: loc + "&page=" + page
         }).done(function(data) {
           var $data = $(data);
-          loading.everyNew($data);
+          loading.everyNew.giveawayPage($data);
 
           $data.find(".pinned-giveaways__outer-wrap").remove(); //avoid appending pinned every load
           var $nextGiveaways = $data.find(".giveaway__row-outer-wrap").detach();
@@ -651,18 +740,18 @@ loading = {
     var lastPage = $(".pagination__navigation").children().last().attr('data-page-number');
     $(".page__heading").last().after($(".pagination").detach());
 	
-	//prevent multiple occurences from cancelling a reply
-	$(".js__comment-reply-cancel").on("click", function(e) {
-		//SG calls
-		$(".comment--submit input[name=parent_id]").val("");
-		$(".comment--submit .comment__child").attr("class", "comment__parent");
-		
-		//alternate movement calls
-		var $box = $(".comment--submit").detach();
-		$box.insertAfter($(".comments").last());
-		
-		e.stopImmediatePropagation();
-	});
+    //prevent multiple occurences from cancelling a reply
+    $(".js__comment-reply-cancel").on("click", function(e) {
+      //SG calls
+      $(".comment--submit input[name=parent_id]").val("");
+      $(".comment--submit .comment__child").attr("class", "comment__parent");
+      
+      //alternate movement calls
+      var $box = $(".comment--submit").detach();
+      $box.insertAfter($(".comments").last());
+      
+      e.stopImmediatePropagation();
+    });
 
     var inload = false;
     $document.on("scroll", function() {
@@ -687,11 +776,7 @@ loading = {
             url: loc +"&page="+ page
           }).done(function(data) {
             var $data = $(data);
-            users.profileHover($data, true);
-            users.tagging.show($data, true);
-            users.listIndication($data, true);
-            threads.injectTimes($data);
-            threads.tracking.all($data);
+            loading.everyNew.commentPage($data);
             
             var $paging = $data.find(".pagination");
             $paging.find(".pagination__navigation").html("Page " + page);
@@ -1113,6 +1198,68 @@ giveaways = {
   }
 },
 threads = {
+  commentBox: {
+    injectHelpers: function() {
+      //TODO - future feature
+    },
+    injectPreview: function($commenter) {
+      var previewing = false,
+          $desc = $commenter.find("textarea[name='description']"),
+          $previewBtn = $("<div/>").addClass("comment__submit-button").text("Preview"),
+          $preview = $("<div/>").addClass("comment__description markdown markdown--resize-body");
+      
+      //special treatment for new discussion
+      if ($commenter.hasClass("form__rows")) {
+        $("<div/>").addClass("align-button-container").append($(".form__submit-button").detach()).append($previewBtn).insertAfter($(".form__row").last());
+      } else {
+        $commenter.find(".comment__submit-button, .page__description__save").after($previewBtn);
+      }
+      
+      $desc.after($preview);
+      
+      var toggle = function(show) {
+        if (show) {
+          $previewBtn.text("Edit");
+          $desc.hide();
+          $preview.show();
+          $preview.html(helpers.markdown.parse($desc.val()));
+        } else {
+          $previewBtn.text("Preview");
+          $desc.show();
+          $preview.hide();
+        }
+      };
+    
+      $previewBtn.on("click", function() {
+        toggle(!previewing);
+        previewing = !previewing;
+      });
+        
+      //reset state on description save/cancel
+      $commenter.find(".page__description__save, .page__description__cancel, .js__comment-edit-save, .comment__cancel-button").on("click", function() {
+        toggle(false);
+      });
+    },
+    injectPagePreview: function() {
+      if (!frogVars.preview.value || (!~location.href.indexOf("/discussion") && !~location.href.indexOf("/giveaway/"))) { return; }
+      
+      $.each($(".comment--submit, .page__description, .form__rows"), function(i, elm) {
+        threads.commentBox.injectPreview($(elm));
+      });
+    },
+    injectEditPreview: function($doc) {
+      if (!frogVars.preview.value || (!~location.href.indexOf("/discussion") && !~location.href.indexOf("/giveaway/"))) { return; }
+      
+      $.each($doc.find(".js__comment-edit"), function(i, elm) {
+        $(elm).on("click.initial", function(e) {
+          var $this = $(this);
+          $this.off("click.initial"); //stays on the page after clicking edit, no need to continuously add
+          
+          threads.commentBox.injectPreview($this.parent().siblings(".comment__edit-state"));
+        });
+      });
+    }
+  },
   //NOTE: needs delayed from page load
   collapseDiscussion: function() {
     if (!frogVars.collapsed.value || !~location.href.indexOf("/discussion/")) { return; }
@@ -1579,6 +1726,8 @@ pointless = {
 
     threads.injectTimes($document);
     threads.tracking.all($document);
+    threads.commentBox.injectPagePreview();
+    threads.commentBox.injectEditPreview($document);
 
     users.profileHover($document);
     users.tagging.show($document);
