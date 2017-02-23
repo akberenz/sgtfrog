@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.1
+// @version      0.8.2.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -906,7 +906,7 @@ sidebar = {
         $tools = $("<ul/>").append(
         helpers.makeSideLink("http://www.sgtools.info/sent/" + userViewed + ordering, "Real Value Sent").find("a").attr("target", "_checkSent"),
         helpers.makeSideLink("http://www.sgtools.info/won/" + userViewed + ordering, "Real Value Won").find("a").attr("target", "_checkWon"),
-        helpers.makeSideLink("http://www.sgtools.info/nonactivated/" + userViewed + ordering, "Non-Activated").find("a").attr("target", "_checkNon"),
+        helpers.makeSideLink("http://www.sgtools.info/nonactivated/" + userViewed, "Non-Activated").find("a").attr("target", "_checkNon"),
         helpers.makeSideLink("http://www.sgtools.info/multiple/" + userViewed, "Multi Wins").find("a").attr("target", "_checkMulti")
     );
 
