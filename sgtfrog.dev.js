@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.2.1
+// @version      0.8.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -98,7 +98,7 @@ var frogShared = {};
 
 
 // Functions //
-var debug = 0, // 0 off, -1 info, -2 trace
+var debug = -2, // 0 off, -1 info, -2 trace
 logging = {
   debug: function(message) {
     if (debug < -1) {
@@ -1674,6 +1674,8 @@ profiles = {
     });
   },
   editor: function(isHover, setName, tagKey, tagTarget) {
+    logging.debug("Applying editor for " + setName + " on key " + tagTarget);
+
     var tag = frogTags[tagKey][tagTarget] || "Add Tag",
         ielm = "<i class='fa fa-tag fa-flip-horizontal' style='font-size: 14px;'></i> ";
 
@@ -1683,7 +1685,9 @@ profiles = {
         var $div = $(this);
         if ($div.children("input").length) { return; } //don't reset input if already set
 
-        $div.html("<input type='text' placeholder='Custom Tag' value='"+ (frogTags[tagKey][tagTarget] || "") +"' maxlength='16' />"). on("keypress", function(ev) {
+        $div.html("<input type='text' placeholder='Custom Tag' value='"+ (frogTags[tagKey][tagTarget] || "") +"' maxlength='16' />")
+            .on("keypress", function(ev) {
+
           var $this = $(this),
               code = ev.which || ev.keyCode;
 
@@ -1691,6 +1695,8 @@ profiles = {
             var val = $(this).children("input").val();
             $div.html("<a>"+ ielm + (val || "Add Tag") +"</a>");
             $("a[href='/"+ setName +"/"+ tagTarget +"']").find("."+ setName +"__tagged").remove();
+
+            logging.debug("Changing " + setName + " value to " + val);
 
             if (val) {
               frogTags[tagKey][tagTarget] = val;
@@ -1714,7 +1720,10 @@ profiles = {
         });
 
         //highlight text on focus, reset on blur
-        $div.find("input").select().focus().on("blur", function() { $div.html("<a>"+ ielm + tag +"</a>"); $(this).parent().off("keypress"); });
+        $div.find("input").select().focus().on("blur", function() {
+          $(this).parent().off("keypress");
+          $div.html("<a>"+ ielm + (frogTags[tagKey][tagTarget] || "Add Tag") +"</a>");
+        });
       }).insertAfter((isHover? ".hover-panel__outer-wrap ":"") + ".featured__heading__medium");
   }
 };
