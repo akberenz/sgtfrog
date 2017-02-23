@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.3.1
+// @version      0.8.4
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -36,6 +36,12 @@ var frogVars = {
   winPercent: { value: GM_getValue("winPercent", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show giveaway win percentage?" },
   searchSame: { value: GM_getValue("searchSame", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show buttons to quickly search for similar giveaways?" },
   realEnd:    { value: GM_getValue("realEnd",    0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show actual end time on giveaway page?" },
+  moreCopies: { value: GM_getValue("moreCopies", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Make multiple copy giveaways stand out?",
+                sub: { name: "Configure", settings: {
+                  moreCopyBold: { value: GM_getValue("moreCopyBold", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Bold text:" },
+                  moreCopyColor: { value: GM_getValue("moreCopyColor", ''), set: { type: "text", opt: ["Color"], about: 'Enter value as hexadecimal color, leave blank for defaults.' }, query: "Text color:" }
+                } }
+              },
   newBadges:  { value: GM_getValue("newBadges",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show additional giveaway badges?" },
   colorBadge: { value: GM_getValue("colorBadge", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Recolor standard giveaway badges?" },
   searchNav:  { value: GM_getValue("searchNav",  0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show the giveaway search bar in the top navigation?" },
@@ -72,7 +78,7 @@ var frogShared = {};
 
 
 // Functions //
-var debug = -2, // 0 off, -1 info, -2 trace
+var debug = 0, // 0 off, -1 info, -2 trace
 logging = {
   debug: function(message) {
     if (debug < -1) {
@@ -578,16 +584,24 @@ settings = {
     for(var i=0; i<keys.length; i++) {
       var k = keys[i];
       if (set.hasOwnProperty(k)) {
-        if (set[k].set.type == 'text' && set[k].set.opt.length > 1) {
+        if (set[k].set.type === 'text' && set[k].set.opt.length > 1) {
+          //treat as JSON
           var compose = {};
           for(var j=0; j<set[k].set.opt.length; j++) {
             var $subinput = $("input[name='"+ k+"_"+j +"']");
             compose[set[k].set.opt[j]] = $subinput.val();
           }
+          
           setVal(k, JSON.stringify(compose));
         } else {
           var $input = $("input[name='"+ k +"']");
-          setVal(k, +$input.val());
+          var inputNum = +$input.val();
+
+          if (isNaN(inputNum)) {
+            setVal(k, $input.val());
+          } else {
+            setVal(k, +inputNum);
+          }
         }
 
         if (set[k].sub) {
@@ -672,6 +686,7 @@ loading = {
       giveaways.injectFlags.wishlist($doc, true);
       giveaways.injectFlags.recent($doc, true);
       giveaways.injectChance($doc);
+      giveaways.highlightCopies($doc);
       giveaways.injectSearch($doc, true);
       giveaways.hideEntered($doc);
       giveaways.easyHide($doc);
@@ -1030,6 +1045,23 @@ giveaways = {
 
       var $chance = $("<div/>").addClass("featured__column").html(chtml(entries, copies));
       $(fga).children().first().after($chance);
+    });
+  },
+  highlightCopies: function($doc) {
+    if (!frogVars.moreCopies.value) { return; }
+    
+    $.each($doc.find('.giveaway__heading__thin'), function(i, elm) {
+      var $elm = $(elm);
+      
+      if (~$elm.html().indexOf('Copies')) {
+        var color = frogVars.moreCopies.sub.settings.moreCopyColor.value || "#323232";
+        if (!~color.indexOf("#")) { color = "#"+color; }
+        $elm.css('color', color);
+        
+        if (frogVars.moreCopies.sub.settings.moreCopyBold.value) {
+          $elm.css('font-weight', 'bold');
+        }
+      }
     });
   },
   injectEndDate: function() {
@@ -1728,6 +1760,7 @@ pointless = {
 
     giveaways.injectFlags.all($document);
     giveaways.injectChance($document);
+    giveaways.highlightCopies($document);
 
     giveaways.injectSearch($document);
     giveaways.injectNavSearch();
