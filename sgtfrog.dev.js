@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.3
+// @version      0.8.3.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -24,32 +24,6 @@ if ($(".nav__sits").length) {
   console.warn("[RIBBIT] User is not logged in, cannot run script.");
   throw new Error("No lilypad.");
 }
-
-// convert out variables with 'Trade' values // REMOVE CODE AFTER UPDATES //
-(function() {
-	if (!GM_getValue("removedTrade", false)) {
-		//keep discuss if set
-		if (GM_getValue("collapsed") & 2) {
-			GM_setValue("collapsed", 1);
-		} // else OFF or never set
-
-		//keep discuss if set
-		if (GM_getValue("tracking") & 2) {
-			GM_setValue("tracking", 1);
-		} // else OFF or never set
-
-		//remove trade if set
-		var loads = GM_getValue("loadLists", 15);
-		if (loads & 2) {
-			var now = (loads&8?4:0) | (loads&4?2:0) | (loads&1?1:0);
-			GM_setValue("loadLists", now);
-		} // else OFF or never set
-
-		GM_deleteValue("tracks[trade]");
-		GM_setValue("removedTrade", true);
-	}
-})();
-// end removal //
 
 // Variables //
 var frogVars = {
