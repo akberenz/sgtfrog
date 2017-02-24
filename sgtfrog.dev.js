@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.4
+// @version      0.8.4.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -39,7 +39,7 @@ var frogVars = {
   moreCopies: { value: GM_getValue("moreCopies", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Make multiple copy giveaways stand out?",
                 sub: { name: "Configure", settings: {
                   moreCopyBold: { value: GM_getValue("moreCopyBold", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Bold text:" },
-                  moreCopyColor: { value: GM_getValue("moreCopyColor", ''), set: { type: "text", opt: ["Color"], about: 'Enter value as hexadecimal color, leave blank for defaults.' }, query: "Text color:" }
+                  moreCopyLabel: { value: JSON.parse(GM_getValue("moreCopyLabel", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: 'Enter value as hexadecimal color, leave blank for defaults.' }, query: "Text color:" }
                 } }
               },
   newBadges:  { value: GM_getValue("newBadges",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show additional giveaway badges?" },
@@ -686,7 +686,7 @@ loading = {
       giveaways.injectFlags.wishlist($doc, true);
       giveaways.injectFlags.recent($doc, true);
       giveaways.injectChance($doc);
-      giveaways.highlightCopies($doc);
+      giveaways.highlightCopies($doc, true);
       giveaways.injectSearch($doc, true);
       giveaways.hideEntered($doc);
       giveaways.easyHide($doc);
@@ -1047,20 +1047,26 @@ giveaways = {
       $(fga).children().first().after($chance);
     });
   },
-  highlightCopies: function($doc) {
+  highlightCopies: function($doc, hasStyle) {
     if (!frogVars.moreCopies.value) { return; }
+    
+    if (!hasStyle) {
+      var cpyFore = frogVars.moreCopies.sub.settings.moreCopyLabel.value.Foreground || "#F0F2F5",
+          cpyBack = frogVars.moreCopies.sub.settings.moreCopyLabel.value.Background || "#6B7A8C"
+      
+      if (!~cpyFore.indexOf("#")) { cpyFore = "#"+cpyFore; }
+      if (!~cpyBack.indexOf("#")) { cpyBack = "#"+cpyBack; }
+      
+      GM_addStyle(".copies__tagged{ text-shadow: none; border-radius: 2px; padding: 1px 2px; " +
+                  "  color: "+ cpyFore +"; background-color: "+ cpyBack +"; " +
+                  "  font-weight: "+ (frogVars.moreCopies.sub.settings.moreCopyBold.value? 'bold':'inherit') +"; }");
+    }
     
     $.each($doc.find('.giveaway__heading__thin'), function(i, elm) {
       var $elm = $(elm);
       
       if (~$elm.html().indexOf('Copies')) {
-        var color = frogVars.moreCopies.sub.settings.moreCopyColor.value || "#323232";
-        if (!~color.indexOf("#")) { color = "#"+color; }
-        $elm.css('color', color);
-        
-        if (frogVars.moreCopies.sub.settings.moreCopyBold.value) {
-          $elm.css('font-weight', 'bold');
-        }
+        $elm.addClass("copies__tagged");
       }
     });
   },
