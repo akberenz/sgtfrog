@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.4.1
+// @version      0.8.5
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -63,6 +63,11 @@ var frogVars = {
                   userWhite: { value: JSON.parse(GM_getValue("userWhite", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }, query: "Whitelisted label colors:" },
                   userBlack: { value: JSON.parse(GM_getValue("userBlack", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }, query: "Blacklisted label colors:" }
                 } }
+              },
+  debugging:  { value: 0, set: { type: "none", opt: [] }, query: "Debug options",
+                sub: { name: "View", settings: {
+                  dbgConsole: { value: GM_getValue("dbgConsole", 2), set: { type: "circle", opt: ["None", "Basic", "Detailed"] }, query: "Console output level:" }
+                } }
               }
 };
 
@@ -77,21 +82,22 @@ var frogTracks = {
 var frogShared = {};
 
 
+
 // Functions //
-var debug = 0, // 0 off, -1 info, -2 trace
+var  dbgLevel = frogVars.debugging.sub.settings.dbgConsole.value,
 logging = {
   debug: function(message) {
-    if (debug < -1) {
+    if (dbgLevel < 1) {
       console.debug("[SGT DEBUG] ", message);
     }
   },
   info: function(message) {
-    if (debug < 0) {
+    if (dbgLevel < 2) {
       console.log("[SGT INFO] ", message);
     }
   },
   warn: function(message) {
-    if (debug < 0) {
+    if (dbgLevel < 2) {
       console.warn("[SGT WARN] ", message);
     }
   },
@@ -214,6 +220,9 @@ helpers = {
         case "number": case "text":
           $field = helpers.settings.makeText(number, isSub, setting, details);
           break;
+        case "none":
+          $field = helpers.settings.makeEmpty(number, isSub, setting, details);
+          break;
         default:
           logging.warn("Cannot determine options type: " + details.set.type);
           return;
@@ -221,8 +230,9 @@ helpers = {
       $form.append($field);
 
       if (details.sub) {
-        $field.find(".form__checkbox").last().after($("<div/>").addClass("form__checkbox is-selected").append($("<a/>").html(details.sub.name))
-                                                      .on("click", function(ev) { $("#sub_"+setting).toggle(); ev.stopImmediatePropagation(); }));
+        $field.find(".form__row__indent").children("div").first()
+              .append($("<div/>").addClass("form__checkbox is-selected").append($("<a/>").html(details.sub.name))
+                                 .on("click", function(ev) { $("#sub_"+setting).toggle(); ev.stopImmediatePropagation(); }));
 
         var set = "abcde";
         var $subform = $("<div/>").attr("id", "sub_"+setting).css("display", "none").appendTo($form);
@@ -318,6 +328,11 @@ helpers = {
       var $desc = $("<div/>").addClass("form__input-description").html(details.set.about);
 
       return helpers.settings.makeHeading(number, details.query, isSub).append($indent.append($desc));
+    },
+    makeEmpty: function(number, isSub, setting, details) {
+      $.each(details.set.opt, function(i, opt) {});
+      
+      return helpers.settings.makeHeading(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($("<div/>")));
     }
   },
   applyGradients: function(elm, range) {
