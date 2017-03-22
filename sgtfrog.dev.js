@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.5.1
+// @version      0.8.5.2
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1132,8 +1132,6 @@ giveaways = {
     if (!frogVars.userTools.value || !~location.pathname.indexOf("/winners")) { return; } //controlled by SGTools sidepanel option
     if ($(".featured__column [href='"+ $(".nav__avatar-outer-wrap").attr("href")+"']").length == 0) { return; } //only inject on your own winner pages
 
-    var ordering = frogVars.userTools.sub.settings.toolsOrdering.value? "/oldestfirst":"/newestfirst";
-
     $.each($(".table__row-outer-wrap"), function(i, row) {
       var $head = $(row).find("p.table__column__heading");
       var user = $head.text();
@@ -1142,7 +1140,7 @@ giveaways = {
             .after($("<a/>").addClass("table__column__secondary-link").css("margin-left",".5em").text("(Check multi-wins)")
                             .attr("href", "http://www.sgtools.info/multiple/" + user).attr("target", "_checkMulti"))
             .after($("<a/>").addClass("table__column__secondary-link").css("margin-left", ".5em").text("(Check non-activated)")
-                            .attr("href", "http://www.sgtools.info/nonactivated/" + user + ordering).attr("target", "_checkNon"));
+                            .attr("href", "http://www.sgtools.info/nonactivated/" + user).attr("target", "_checkNon"));
     });
   },
   hideEntered: function($doc) {
