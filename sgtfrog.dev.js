@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.5
+// @version      0.8.5.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -331,7 +331,7 @@ helpers = {
     },
     makeEmpty: function(number, isSub, setting, details) {
       $.each(details.set.opt, function(i, opt) {});
-      
+
       return helpers.settings.makeHeading(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($("<div/>")));
     }
   },
@@ -606,7 +606,7 @@ settings = {
             var $subinput = $("input[name='"+ k+"_"+j +"']");
             compose[set[k].set.opt[j]] = $subinput.val();
           }
-          
+
           setVal(k, JSON.stringify(compose));
         } else {
           var $input = $("input[name='"+ k +"']");
@@ -1064,22 +1064,22 @@ giveaways = {
   },
   highlightCopies: function($doc, hasStyle) {
     if (!frogVars.moreCopies.value) { return; }
-    
+
     if (!hasStyle) {
       var cpyFore = frogVars.moreCopies.sub.settings.moreCopyLabel.value.Foreground || "#F0F2F5",
           cpyBack = frogVars.moreCopies.sub.settings.moreCopyLabel.value.Background || "#6B7A8C"
-      
+
       if (!~cpyFore.indexOf("#")) { cpyFore = "#"+cpyFore; }
       if (!~cpyBack.indexOf("#")) { cpyBack = "#"+cpyBack; }
-      
+
       GM_addStyle(".copies__tagged{ text-shadow: none; border-radius: 2px; padding: 1px 2px; " +
                   "  color: "+ cpyFore +"; background-color: "+ cpyBack +"; " +
                   "  font-weight: "+ (frogVars.moreCopies.sub.settings.moreCopyBold.value? 'bold':'inherit') +"; }");
     }
-    
+
     $.each($doc.find('.giveaway__heading__thin'), function(i, elm) {
       var $elm = $(elm);
-      
+
       if (~$elm.html().indexOf('Copies')) {
         $elm.addClass("copies__tagged");
       }
@@ -1725,6 +1725,9 @@ profiles = {
 
             logging.debug("Changing " + setName + " value to " + val);
 
+            //reload frogTags in case it changed on another tab
+            frogTags[tagKey] = JSON.parse(GM_getValue(setName +"Tags", '{}'));
+
             if (val) {
               frogTags[tagKey][tagTarget] = val;
 
@@ -1737,6 +1740,7 @@ profiles = {
             } else {
               delete frogTags[tagKey][tagTarget];
             }
+
             GM_setValue(setName +"Tags", JSON.stringify(frogTags[tagKey]));
 
             $this.off("keypress");
