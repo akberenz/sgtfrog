@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.5.2
+// @version      0.8.5.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -728,8 +728,6 @@ loading = {
     GM_addStyle(".pagination__loader{ text-align: center; margin-top: 1em; } " +
                 ".pagination__loader .fa{ font-size: 2em; } ");
 
-    //FIXME - hide giveaway broken on appended pages
-
     var page = helpers.fromQuery("page");
     if (page == undefined) { page = 1; }
     $(".widget-container").find(".page__heading").first().after($(".pagination").detach());
@@ -782,6 +780,23 @@ loading = {
 
           inload = false;
           loading.removeSpinner();
+          
+          //reapply 'hide giveaway' functionality to newly loaded giveaways
+          $.each($nextGiveaways.find(".giveaway__hide"), function(i, elm) {
+            $(elm).on('click', function(evt) {
+              var $this = $(this);
+              
+              $(".popup--hide-games input[name=game_id]").val($this.closest(".giveaway__row-outer-wrap").attr("data-game-id"));
+              $(".popup--hide-games .popup__heading__bold").text($this.closest("h2").find(".giveaway__heading__name").text());
+              
+              //dirty magic to execute bPopup function on page
+              var script = document.createElement('script');
+              script.type = "application/javascript";
+              script.textContent = '(function(){$(".'+ $this.attr("data-popup") +'").bPopup({opacity:.85,fadeSpeed:200,followSpeed:500,modalColor:"#3c424d",amsl:[0]});})();';
+              
+              document.body.appendChild(script).removeChild(script);
+            });
+          });
         });
       }
     });
@@ -1186,8 +1201,8 @@ giveaways = {
       $wrap.find(".giveaway__row-inner-wrap").prepend($wrap.find(".global__image-outer-wrap--game-medium").detach());
 
       //split name from fee/actions
-      $wrap.find(".giveaway__summary").prepend($("<h2/>").addClass("giveaway__heading")
-                                               .html($wrap.find(".giveaway__heading__name").detach()));
+      $wrap.find(".giveaway__summary h2").append($("<h3/>").addClass("giveaway__heading")
+                                                 .html($wrap.find(".giveaway__heading").children().not(".giveaway__heading__name").detach()));
 
       //badges in a single row
       $wrap.find(".giveaway__columns").before($("<div/>").addClass("giveaway__columns giveaway__columns--badges")
