@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.6
+// @version      0.8.6.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -733,7 +733,7 @@ loading = {
       users.listIndication($doc, true);
       threads.injectTimes($doc);
       threads.tracking.all($doc);
-      threads.commentBox.injectEditPreview($doc);
+      threads.commentBox.injectEdit($doc);
     }
   },
   giveaways: function() {
@@ -1321,40 +1321,43 @@ giveaways = {
 },
 threads = {
   commentBox: {
-    injectHelpers: function() {
+    injectHelpers: function($commenter) {
+      var $row = $("<div/>").addClass("align-button-container align-button-container-top"),
+          containClass = "button-container",
+          fnBtn = helpers.markdown.button;
+
+      $row.append($("<div/>").addClass(containClass)
+                  .append(fnBtn('Bold', 'fa-bold', '**', '**'))
+                  .append(fnBtn('Italic', 'fa-italic', '*', '*'))
+                  .append(fnBtn('Strikethrough', 'fa-strikethrough', '~~', '~~')))
+          .append($("<div/>").addClass(containClass)
+                  .append(fnBtn('Link', 'fa-link', '[', '](URL)'))
+                  .append(fnBtn('Image', 'fa-image', '![HOVER](', ')')))
+          .append($("<div/>").addClass(containClass)
+                  .append(fnBtn('Quote', 'fa-quote-left', '\n> '))
+                  .append(fnBtn('Spoiler', 'fa-user-secret', '~', '~'))
+                  .append(fnBtn('Code', 'fa-code', '`', '`')))
+          .append($("<div/>").addClass(containClass)
+                  .append(fnBtn('Bullet List', 'fa-list-ul', '\n* '))
+                  .append(fnBtn('Number List', 'fa-list-ol', '\n0. '))
+                  .append(fnBtn('Horizontal List', 'fa-ellipsis-h', '\n\n---\n\n')))
+          .append($("<div/>").addClass(containClass)
+                  .append(fnBtn('Heading One', 'fa-header', '\n# ', null, '1'))
+                  .append(fnBtn('Heading Two', 'fa-header', '\n## ', null, '2'))
+                  .append(fnBtn('Heading Three', 'fa-header', '\n### ', null, '3')))
+          .append($("<div/>").addClass(containClass)
+                  .append(fnBtn('Table', 'fa-table', '| Head | Head |\n| -- | -- |\n| ', ' | Cell |')));
+
+      $commenter.find("textarea").before($row);
+    },
+    injectPageHelpers: function() {
       if (!frogVars.formatting.value || (!~location.href.indexOf("/discussion") && !~location.href.indexOf("/giveaway/"))) { return; }
 
       GM_addStyle(".button-container{ display: flex; } " +
                   ".align-button-container-top{ margin-bottom: 5px; }");
 
       $.each($(".comment--submit, .page__description, .form__rows"), function(i, elm) {
-        var $row = $("<div/>").addClass("align-button-container align-button-container-top"),
-            containClass = "button-container",
-            fnBtn = helpers.markdown.button;
-
-        $row.append($("<div/>").addClass(containClass)
-                    .append(fnBtn('Bold', 'fa-bold', '**', '**'))
-                    .append(fnBtn('Italic', 'fa-italic', '*', '*'))
-                    .append(fnBtn('Strikethrough', 'fa-strikethrough', '~~', '~~')))
-            .append($("<div/>").addClass(containClass)
-                    .append(fnBtn('Link', 'fa-link', '[', '](URL)'))
-                    .append(fnBtn('Image', 'fa-image', '![HOVER](', ')')))
-            .append($("<div/>").addClass(containClass)
-                    .append(fnBtn('Quote', 'fa-quote-left', '\n> '))
-                    .append(fnBtn('Spoiler', 'fa-user-secret', '~', '~'))
-                    .append(fnBtn('Code', 'fa-code', '`', '`')))
-            .append($("<div/>").addClass(containClass)
-                    .append(fnBtn('Bullet List', 'fa-list-ul', '\n* '))
-                    .append(fnBtn('Number List', 'fa-list-ol', '\n0. '))
-                    .append(fnBtn('Horizontal List', 'fa-ellipsis-h', '\n\n---\n\n')))
-            .append($("<div/>").addClass(containClass)
-                    .append(fnBtn('Heading One', 'fa-header', '\n# ', null, '1'))
-                    .append(fnBtn('Heading Two', 'fa-header', '\n## ', null, '2'))
-                    .append(fnBtn('Heading Three', 'fa-header', '\n### ', null, '3')))
-            .append($("<div/>").addClass(containClass)
-                    .append(fnBtn('Table', 'fa-table', '| Head | Head |\n| -- | -- |\n| ', ' | Cell |')));
-
-        $(elm).find("textarea").before($row);
+        threads.commentBox.injectHelpers($(elm));
       });
     },
     injectPreview: function($commenter) {
@@ -1405,15 +1408,22 @@ threads = {
         threads.commentBox.injectPreview($(elm));
       });
     },
-    injectEditPreview: function($doc) {
-      if (!frogVars.preview.value || (!~location.href.indexOf("/discussion") && !~location.href.indexOf("/giveaway/"))) { return; }
+    injectEdit: function($doc) {
+      if (!~location.href.indexOf("/discussion") && !~location.href.indexOf("/giveaway/")) { return; }
 
       $.each($doc.find(".js__comment-edit"), function(i, elm) {
         $(elm).on("click.initial", function(e) {
-          var $this = $(this);
-          $this.off("click.initial"); //stays on the page after clicking edit, no need to continuously add
+          var $this = $(this),
+              $editor = $this.parent().siblings(".comment__edit-state");
 
-          threads.commentBox.injectPreview($this.parent().siblings(".comment__edit-state"));
+          if (frogVars.formatting.value) {
+            threads.commentBox.injectHelpers($editor);
+          }
+          if (frogVars.preview.value) {
+            threads.commentBox.injectPreview($editor);
+          }
+
+          $this.off("click.initial"); //stays on the page after clicking edit, no need to continuously add
         });
       });
     }
@@ -1866,9 +1876,9 @@ pointless = {
 
     threads.injectTimes($document);
     threads.tracking.all($document);
-    threads.commentBox.injectHelpers();
+    threads.commentBox.injectPageHelpers();
     threads.commentBox.injectPagePreview();
-    threads.commentBox.injectEditPreview($document);
+    threads.commentBox.injectEdit($document);
 
     users.profileHover($document);
     users.tagging.show($document);
