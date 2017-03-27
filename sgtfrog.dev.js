@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.5.3
+// @version      0.8.6
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -13,7 +13,6 @@
 // @grant        GM_addStyle
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @grant		 GM_deleteValue
 // ==/UserScript==
 */
 
@@ -50,6 +49,7 @@ var frogVars = {
   activeTalk: { value: GM_getValue("activeTalk", 2), set: { type: "circle", opt: ["Yes", "Sidebar", "No"] }, query: "Show the 'Active Discussions' section?" },
   collapsed:  { value: GM_getValue("collapsed",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "After first page, collapse original discussion post:" },
   tracking:   { value: GM_getValue("tracking",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Track read comments and topics on discussions:" },
+  formatting: { value: GM_getValue("formatting", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show quick format buttons on comment box?" },
   preview:    { value: GM_getValue("preview",    1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Allow preview of posts before submitting?" },
   userTools:  { value: GM_getValue("userTools",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show SGTools links on user and winner pages?",
                 sub: { name: "Configure", settings: {
@@ -405,7 +405,7 @@ helpers = {
           // Strip HTML
           type: "lang",
           filter: function(text) {
-            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return text.replace(/</g, "&lt;");
           }
         },
         {
@@ -476,6 +476,23 @@ helpers = {
     },
     parse: function(raw) {
       return helpers.markdown.getConverter().makeHtml(raw);
+    },
+    inject: function(selStart, selEnd, raw, pre, post) {
+      if (selStart === 0 || raw.charAt(selStart-1) === '\n') { pre = pre.replace(/^\n+/, ''); }
+
+      return raw.slice(0, selStart) + pre + raw.slice(selStart, selEnd) + (post || '') + raw.slice(selEnd);
+    },
+    button: function(title, icon, pre, post, text) {
+      return $("<div/>").addClass("form__add-answer-button").attr('title', title).html("<i class='fa "+ icon +"'></i>" + (text||''))
+             .on('click', function(evt) {
+               var $text = $(this).parents("form").find("textarea"),
+                   selTo = $text.prop("selectionEnd") + pre.length;
+
+               $text.val(helpers.markdown.inject($text.prop("selectionStart"), $text.prop("selectionEnd"), $text.val(), pre, post));
+
+               $text.focus();
+               $text.prop("selectionStart", selTo).prop("selectionEnd", selTo);
+             });
     }
   }
 },
@@ -780,20 +797,20 @@ loading = {
 
           inload = false;
           loading.removeSpinner();
-          
+
           //reapply 'hide giveaway' functionality to newly loaded giveaways
           $.each($nextGiveaways.find(".giveaway__hide"), function(i, elm) {
             $(elm).on('click', function(evt) {
               var $this = $(this);
-              
+
               $(".popup--hide-games input[name=game_id]").val($this.closest(".giveaway__row-outer-wrap").attr("data-game-id"));
               $(".popup--hide-games .popup__heading__bold").text($this.closest("h2").find(".giveaway__heading__name").text());
-              
+
               //dirty magic to execute bPopup function on page
               var script = document.createElement('script');
               script.type = "application/javascript";
               script.textContent = '(function(){$(".'+ $this.attr("data-popup") +'").bPopup({opacity:.85,fadeSpeed:200,followSpeed:500,modalColor:"#3c424d",amsl:[0]});})();';
-              
+
               document.body.appendChild(script).removeChild(script);
             });
           });
@@ -1305,19 +1322,53 @@ giveaways = {
 threads = {
   commentBox: {
     injectHelpers: function() {
-      //TODO - future feature
+      if (!frogVars.formatting.value || (!~location.href.indexOf("/discussion") && !~location.href.indexOf("/giveaway/"))) { return; }
+
+      GM_addStyle(".button-container{ display: flex; } " +
+                  ".align-button-container-top{ margin-bottom: 5px; }");
+
+      $.each($(".comment--submit, .page__description, .form__rows"), function(i, elm) {
+        var $row = $("<div/>").addClass("align-button-container align-button-container-top"),
+            containClass = "button-container",
+            fnBtn = helpers.markdown.button;
+
+        $row.append($("<div/>").addClass(containClass)
+                    .append(fnBtn('Bold', 'fa-bold', '**', '**'))
+                    .append(fnBtn('Italic', 'fa-italic', '*', '*'))
+                    .append(fnBtn('Strikethrough', 'fa-strikethrough', '~~', '~~')))
+            .append($("<div/>").addClass(containClass)
+                    .append(fnBtn('Link', 'fa-link', '[', '](URL)'))
+                    .append(fnBtn('Image', 'fa-image', '![HOVER](', ')')))
+            .append($("<div/>").addClass(containClass)
+                    .append(fnBtn('Quote', 'fa-quote-left', '\n> '))
+                    .append(fnBtn('Spoiler', 'fa-user-secret', '~', '~'))
+                    .append(fnBtn('Code', 'fa-code', '`', '`')))
+            .append($("<div/>").addClass(containClass)
+                    .append(fnBtn('Bullet List', 'fa-list-ul', '\n* '))
+                    .append(fnBtn('Number List', 'fa-list-ol', '\n0. '))
+                    .append(fnBtn('Horizontal List', 'fa-ellipsis-h', '\n\n---\n\n')))
+            .append($("<div/>").addClass(containClass)
+                    .append(fnBtn('Heading One', 'fa-header', '\n# ', null, '1'))
+                    .append(fnBtn('Heading Two', 'fa-header', '\n## ', null, '2'))
+                    .append(fnBtn('Heading Three', 'fa-header', '\n### ', null, '3')))
+            .append($("<div/>").addClass(containClass)
+                    .append(fnBtn('Table', 'fa-table', '| Head | Head |\n| -- | -- |\n| ', ' | Cell |')));
+
+        $(elm).find("textarea").before($row);
+      });
     },
     injectPreview: function($commenter) {
       var previewing = false,
           $desc = $commenter.find("textarea[name='description']"),
           $previewBtn = $("<div/>").addClass("comment__submit-button").text("Preview"),
-          $preview = $("<div/>").addClass("comment__description markdown markdown--resize-body");
+          $preview = $("<div/>").addClass("comment__description markdown markdown--resize-body"),
+          $helpers = $(".align-button-container-top");
 
       //special treatment for new discussion
       if ($commenter.hasClass("form__rows")) {
         $("<div/>").addClass("align-button-container").append($(".form__submit-button").detach()).append($previewBtn).insertAfter($(".form__row").last());
       } else {
-        $commenter.find(".comment__submit-button, .page__description__save").after($previewBtn);
+        $commenter.find(".comment__submit-button, .page__description__save").last().after($previewBtn);
       }
 
       $desc.after($preview);
@@ -1326,11 +1377,13 @@ threads = {
         if (show) {
           $previewBtn.text("Edit");
           $desc.hide();
+          $helpers.hide();
           $preview.show();
           $preview.html(helpers.markdown.parse($desc.val()));
         } else {
           $previewBtn.text("Preview");
           $desc.show();
+          $helpers.show();
           $preview.hide();
         }
       };
@@ -1813,6 +1866,7 @@ pointless = {
 
     threads.injectTimes($document);
     threads.tracking.all($document);
+    threads.commentBox.injectHelpers();
     threads.commentBox.injectPagePreview();
     threads.commentBox.injectEditPreview($document);
 
