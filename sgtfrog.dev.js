@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.7
+// @version      0.8.8
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -31,7 +31,7 @@ if (GM_getValue("reconfigure", 1)) {
   if (ll > 0) {
     ll <<= 1;
     if (ll === 14) { ll++; } //enable new feature too for those with all loaders enabled
-    
+
     GM_setValue("loadLists", ll);
   }
   GM_setValue("reconfigure", 0);
@@ -63,6 +63,7 @@ var frogVars = {
   sideMine:   { value: GM_getValue("sideMine",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Hide 'My Giveaways' in the sidebar? (Still available under nav dropdown)" },
   activeTalk: { value: GM_getValue("activeTalk", 2), set: { type: "circle", opt: ["Yes", "Sidebar", "No"] }, query: "Show the 'Active Discussions' section?" },
   collapsed:  { value: GM_getValue("collapsed",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "After first page, collapse original discussion post:" },
+  onDemand:   { value: GM_getValue("onDemand",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Only load attached images on demand?" },
   tracking:   { value: GM_getValue("tracking",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Track read comments and topics on discussions:" },
   formatting: { value: GM_getValue("formatting", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show quick format buttons on comment box?" },
   preview:    { value: GM_getValue("preview",    1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Allow preview of posts before submitting?" },
@@ -151,7 +152,7 @@ helpers = {
         && !~path.indexOf("/legal/")
         && !~path.indexOf("/stats/")
         && !(~path.indexOf("/giveaway/") && !~path.indexOf("/entries"))
-        && !helpers.pageSet.GAList() 
+        && !helpers.pageSet.GAList()
         && !helpers.pageSet.CommentList());
     }
   },
@@ -765,6 +766,7 @@ loading = {
       threads.injectTimes($doc);
       threads.tracking.all($doc);
       threads.commentBox.injectEdit($doc);
+      loading.imgDemand($doc);
     }
   },
   giveaways: function() {
@@ -917,10 +919,10 @@ loading = {
   },
   tables: function() {
     if (!(frogVars.loadLists.value & 1) || !helpers.pageSet.TableList()) { return; }
-    
+
     GM_addStyle(".pagination__loader{ text-align: center; margin-top: 1em; } " +
                 ".pagination__loader .fa{ font-size: 2em; } ");
-                
+
     var page = helpers.fromQuery("page");
     if (page == undefined) { page = 1; }
     $(".widget-container").find(".page__heading").first().after($(".pagination").detach());
@@ -931,7 +933,7 @@ loading = {
       if (nearEdge >= .90 && !inload) {
         inload = true;
         page++;
-        
+
         var loc = location.href;
         if (~loc.indexOf("?")) {
           loc = loc.replace(/page=\d+?&?/, ""); //keep other params
@@ -948,22 +950,22 @@ loading = {
           url: loc +"&page="+ page
         }).done(function(data) {
           var $data = $(data);
-          
+
           var $paging = $data.find(".pagination");
           var $nav = $paging.find(".pagination__navigation");
-          
+
           var $nextContent = $data.find(".table__row-outer-wrap").detach();
-          
+
           if ($nav.children().last().text().trim() !== 'Last') {
             var lastNum = $nav.children().last().attr("data-page-number");
             if (!lastNum || page-1 == lastNum) {
               logging.info("No more content");
               loading.removeSpinner();
-              
-              return; 
+
+              return;
             }
           }
-          
+
           $nav.html("Page " + page);
 
           $(".table__row-outer-wrap").last().parent()
@@ -1007,6 +1009,18 @@ loading = {
         });
       });
     }, frogVars.pointInvl.value * 1000);
+  },
+  imgDemand: function($doc) {
+    if (!frogVars.onDemand.value) { return; }
+
+	  $.each($doc.find(".comment__description, .page__description").find("img"), function(i, img) {
+      var $this = $(this);
+
+      $this.attr("data-on-demand", $this.attr("src")).attr("src", "");
+      $this.parent().siblings(".comment__toggle-attached").on("click", function() {
+        $this.attr("src", $this.attr("data-on-demand"));
+      });
+    });
   }
 },
 sidebar = {
@@ -1946,8 +1960,9 @@ pointless = {
     loading.threads();
     loading.thanks();
     loading.giveaways();
-    loading.points();
     loading.tables();
+    loading.points();
+    loading.imgDemand($document);
 
     giveaways.injectFlags.all($document);
     giveaways.injectChance($document);
