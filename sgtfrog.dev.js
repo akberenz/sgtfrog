@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.6.1
+// @version      0.8.7
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -24,10 +24,25 @@ if ($(".nav__sits").length) {
   throw new Error("No lilypad.");
 }
 
+
+//// TODO - remove in later release ////
+if (GM_getValue("reconfigure", 1)) {
+  var ll = GM_getValue("loadLists", -1);
+  if (ll > 0) {
+    ll <<= 1;
+    if (ll === 14) { ll++; } //enable new feature too for those with all loaders enabled
+    
+    GM_setValue("loadLists", ll);
+  }
+  GM_setValue("reconfigure", 0);
+}
+//// END BLOCK ////
+
+
 // Variables //
 var frogVars = {
   fixedElms:  { value: GM_getValue("fixedElms",  6), set: { type: "square", opt: ["Header", "Sidebar", "Footer"] }, query: "Set fixed elements:" },
-  loadLists:  { value: GM_getValue("loadLists",  7), set: { type: "square", opt: ["Giveaways", "Discussions", "Comments"] }, query: "Continuously load:" },
+  loadLists:  { value: GM_getValue("loadLists", 15), set: { type: "square", opt: ["Giveaways", "Discussions", "Comments", "General Content"] }, query: "Continuously load:" },
   gridView:   { value: GM_getValue("gridView",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show giveaways in a grid view?" },
   featuredGA: { value: GM_getValue("featuredGA", 2), set: { type: "circle", opt: ["Yes", "Expanded", "No"] }, query: "Show featured giveaways section?" },
   hideEntry:  { value: GM_getValue("hideEntry",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Hide entered giveaways?" },
@@ -117,12 +132,28 @@ helpers = {
     }
     return urlParams[name];
   },
-  isGAlist: function() {
-    return !(~location.href.indexOf("/discussion")
-      || ~location.href.indexOf("/giveaway/")
-      || ~location.href.indexOf("/account/")
-      || ~location.href.indexOf("/archive")
-      || ~location.href.indexOf("/settings"));
+  pageSet: {
+    GAList: function() {
+      var path = location.pathname;
+      return (path === "/"
+        || ~path.indexOf("/giveaways/search")
+        || ~path.indexOf("/user/")
+        || (~path.indexOf("/group/") && !~path.indexOf("/users") && !~path.indexOf("/stats") && !~path.indexOf("/wishlist")));
+    },
+    CommentList: function() {
+      return (~location.pathname.indexOf("/discussion/")
+        || ~location.pathname.indexOf("/messages"));
+    },
+    TableList: function() {
+      var path = location.pathname;
+      return (!~path.indexOf("/settings/")
+        && !~path.indexOf("/about/")
+        && !~path.indexOf("/legal/")
+        && !~path.indexOf("/stats/")
+        && !(~path.indexOf("/giveaway/") && !~path.indexOf("/entries"))
+        && !helpers.pageSet.GAList() 
+        && !helpers.pageSet.CommentList());
+    }
   },
   listingPit: {
     cache: {
@@ -738,9 +769,7 @@ loading = {
   },
   giveaways: function() {
     //avoid stepping on other loading pages
-    if (!(frogVars.loadLists.value & 4) || !helpers.isGAlist()) {
-      return;
-    }
+    if (!(frogVars.loadLists.value & 8) || !helpers.pageSet.GAList()) { return; }
 
     GM_addStyle(".pagination__loader{ text-align: center; margin-top: 1em; } " +
                 ".pagination__loader .fa{ font-size: 2em; } ");
@@ -764,9 +793,9 @@ loading = {
           loc += "/search?";
         }
 
-        logging.info("Loading next page: "+ page);
         loading.addSpinner($(".giveaway__row-outer-wrap").last());
-        logging.debug(loc +"&page="+ page);
+        logging.info("Loading next page: "+ page);
+        logging.debug("Giveaway: "+ loc +"&page="+ page);
 
         $.ajax({
           method: 'GET',
@@ -819,11 +848,11 @@ loading = {
     });
   },
   threads: function() {
-    if (!(frogVars.loadLists.value & 2) || !~location.href.indexOf("/discussion/")) { return; }
+    if (!(frogVars.loadLists.value & 4) || !~location.href.indexOf("/discussion/")) { return; }
     loading.comments();
   },
   thanks: function() {
-    if (!(frogVars.loadLists.value & 1) || !~location.href.indexOf("/giveaway/")) { return; }
+    if (!(frogVars.loadLists.value & 2) || !~location.href.indexOf("/giveaway/")) { return; }
     loading.comments();
   },
   comments: function() {
@@ -864,7 +893,7 @@ loading = {
 
           loading.addSpinner($(".comments").last());
           logging.info("Loading next page: "+ page +"/"+ lastPage);
-          logging.debug(loc +"&page="+ page);
+          logging.debug("Comment: "+ loc +"&page="+ page);
 
           $.ajax({
             method: 'GET',
@@ -883,6 +912,66 @@ loading = {
             loading.removeSpinner();
           });
         }
+      }
+    });
+  },
+  tables: function() {
+    if (!(frogVars.loadLists.value & 1) || !helpers.pageSet.TableList()) { return; }
+    
+    GM_addStyle(".pagination__loader{ text-align: center; margin-top: 1em; } " +
+                ".pagination__loader .fa{ font-size: 2em; } ");
+                
+    var page = helpers.fromQuery("page");
+    if (page == undefined) { page = 1; }
+    $(".widget-container").find(".page__heading").first().after($(".pagination").detach());
+
+    var inload = false;
+    $document.on("scroll", function() {
+      var nearEdge = ($document.scrollTop() + $(window).height()) / $document.height();
+      if (nearEdge >= .90 && !inload) {
+        inload = true;
+        page++;
+        
+        var loc = location.href;
+        if (~loc.indexOf("?")) {
+          loc = loc.replace(/page=\d+?&?/, ""); //keep other params
+        } else {
+          loc += "/search?";
+        }
+
+        loading.addSpinner($(".table__row-outer-wrap").last());
+        logging.info("Loading next page: "+ page);
+        logging.debug("Table: "+ loc +"&page="+ page);
+
+        $.ajax({
+          method: 'GET',
+          url: loc +"&page="+ page
+        }).done(function(data) {
+          var $data = $(data);
+          
+          var $paging = $data.find(".pagination");
+          var $nav = $paging.find(".pagination__navigation");
+          
+          var $nextContent = $data.find(".table__row-outer-wrap").detach();
+          
+          if ($nav.children().last().text().trim() !== 'Last') {
+            var lastNum = $nav.children().last().attr("data-page-number");
+            if (!lastNum || page-1 == lastNum) {
+              logging.info("No more content");
+              loading.removeSpinner();
+              
+              return; 
+            }
+          }
+          
+          $nav.html("Page " + page);
+
+          $(".table__row-outer-wrap").last().parent()
+            .append($paging).append($nextContent);
+
+          inload = false;
+          loading.removeSpinner();
+        });
       }
     });
   },
@@ -1189,7 +1278,7 @@ giveaways = {
     });
   },
   gridForm: function($doc, hasStyle) {
-    if (!frogVars.gridView.value || !helpers.isGAlist()) { return; }
+    if (!frogVars.gridView.value || !helpers.pageSet.GAList()) { return; }
 
     if (!hasStyle) {
       GM_addStyle(".pagination{ clear: both; } " +
@@ -1858,6 +1947,7 @@ pointless = {
     loading.thanks();
     loading.giveaways();
     loading.points();
+    loading.tables();
 
     giveaways.injectFlags.all($document);
     giveaways.injectChance($document);
