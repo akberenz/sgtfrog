@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.8
+// @version      0.8.9
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -58,6 +58,7 @@ var frogVars = {
               },
   newBadges:  { value: GM_getValue("newBadges",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show additional giveaway badges?" },
   colorBadge: { value: GM_getValue("colorBadge", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Recolor standard giveaway badges?" },
+  allGroup:   { value: GM_getValue("allGroup",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show all groups on giveaway pages?" },
   searchNav:  { value: GM_getValue("searchNav",  0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show the giveaway search bar in the top navigation?" },
   pointInvl:  { value: GM_getValue("pointInvl",  0), set: { type: "number", opt: ["Seconds"], about: "Value in seconds, enter 0 to disable." }, query: "Regularly update header values (points, messages, etc.)?" },
   sideMine:   { value: GM_getValue("sideMine",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Hide 'My Giveaways' in the sidebar? (Still available under nav dropdown)" },
@@ -1226,6 +1227,37 @@ giveaways = {
     var $clock = $(".featured__summary").find("span[data-timestamp]").first();
     $clock.parent().append($("<em/>").html(" ("+ helpers.time.sgString(+$clock.attr("data-timestamp")) +")"));
   },
+  expandedGroups: function() {
+    if (!frogVars.allGroup.value || !~location.href.indexOf("/giveaway/")) { return; }
+
+    //remove group indicator if present, quit if not
+    var $group = $(".featured__column--group").detach();
+    if ($group.length === 0) {
+      logging.debug("No groups to expand");
+      return;
+    }
+
+    var groupPage = location.pathname.split("/", 4),
+        $groupRow = $("<div/>").addClass("featured__columns featured__columns--groups")
+                      .append($group.html('<i class="fa fa-fw fa-user"></i>'));
+
+    groupPage.length = 4; //drop any extra after giveaway name to cleanly hit groups page
+
+    $.ajax({
+      method: "GET",
+      url: groupPage.join("/") + "/groups"
+    }).done(function(data) {
+      var $data = $(data);
+
+      $.each($data.find(".table__rows").find(".global__image-outer-wrap--avatar-small"), function(i, grp) {
+        $groupRow.append($(grp).css({"width": "28px", "height": "28px", "padding": "0", "margin-left": "0"}));
+      });
+
+      groups.profileHover($groupRow); //apply hover on groups
+
+      $(".featured__summary").append($groupRow);
+    });
+  },
   injectSearch: function($doc, hasStyle) {
     if (!frogVars.searchSame.value || !~location.href.indexOf("/giveaway/")) { return; }
 
@@ -1975,6 +2007,7 @@ pointless = {
     giveaways.gridForm($document);
     giveaways.activeThreads.find();
     giveaways.injectWinnerTools();
+    giveaways.expandedGroups();
 
     sidebar.removeMyGA();
     sidebar.injectSGTools();
