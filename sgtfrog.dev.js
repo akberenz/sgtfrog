@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.9
+// @version      0.8.10
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -13,6 +13,7 @@
 // @grant        GM_addStyle
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant       GM_deleteValue
 // ==/UserScript==
 */
 
@@ -26,16 +27,7 @@ if ($(".nav__sits").length) {
 
 
 //// TODO - remove in later release ////
-if (GM_getValue("reconfigure", 1)) {
-  var ll = GM_getValue("loadLists", -1);
-  if (ll > 0) {
-    ll <<= 1;
-    if (ll === 14) { ll++; } //enable new feature too for those with all loaders enabled
-
-    GM_setValue("loadLists", ll);
-  }
-  GM_setValue("reconfigure", 0);
-}
+GM_deleteValue("reconfigure");
 //// END BLOCK ////
 
 
@@ -77,6 +69,7 @@ var frogVars = {
   customTags: { value: GM_getValue("customTags", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Allow tagging of users and groups?" },
   userLists:  { value: GM_getValue("userLists",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Label black-/white- listed users?",
                 sub: { name: "Configure", settings: {
+                  userColor: { value: GM_getValue("userColor", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Apply colors to usernames?" },
                   userWhite: { value: JSON.parse(GM_getValue("userWhite", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }, query: "Whitelisted label colors:" },
                   userBlack: { value: JSON.parse(GM_getValue("userBlack", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }, query: "Blacklisted label colors:" }
                 } }
@@ -1663,7 +1656,7 @@ users = {
       return; //not active on user pages for obvious reasons
     }
 
-    if (!hasStyle) {
+    if (!hasStyle && frogVars.userLists.sub.settings.userColor.value) {
       var wlFore = frogVars.userLists.sub.settings.userWhite.value.Foreground || "#2A2",
           wlBack = frogVars.userLists.sub.settings.userWhite.value.Background || "#FFF",
           blFore = frogVars.userLists.sub.settings.userBlack.value.Foreground || "#C55",
