@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.10
+// @version      0.8.11
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1251,6 +1251,25 @@ giveaways = {
       $(".featured__summary").append($groupRow);
     });
   },
+  continueHiding: function(force) {
+    if (!~location.href.indexOf("/giveaway/")) { return; }
+
+    if (!force && $(".featured__giveaway__hide").length > 0) {
+      //immediately apply when hiding from page
+      $(".js__submit-hide-games").on('click', function() {
+        console.log("Activating hide status");
+        giveaways.continueHiding(true);
+      });
+
+      return; //game is unhidden at this point - do nothing else
+    }
+
+    logging.info("Giveaway is suppose to be hidden");
+    $(".featured__inner-wrap, .sidebar__shortcut-outer-wrap").addClass("is-faded");
+
+    var gameName = $(".featured__heading__medium").first().text();
+    $(".featured__heading").append($("<a/>").attr('href', '/account/settings/giveaways/filters/search?q=' + gameName).html("<i class='fa fa-eye'></i>"));
+  },
   injectSearch: function($doc, hasStyle) {
     if (!frogVars.searchSame.value || !~location.href.indexOf("/giveaway/")) { return; }
 
@@ -2001,6 +2020,7 @@ pointless = {
     giveaways.activeThreads.find();
     giveaways.injectWinnerTools();
     giveaways.expandedGroups();
+    giveaways.continueHiding();
 
     sidebar.removeMyGA();
     sidebar.injectSGTools();
