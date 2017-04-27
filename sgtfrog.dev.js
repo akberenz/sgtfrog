@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.11.2
+// @version      0.8.11.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -636,7 +636,7 @@ settings = {
       });
     }
   },
-  save: function(set) {
+  save: function(set, subset) {
     var setVal = function(name, val) {
       logging.debug("Setting "+ name +" to "+ val);
       GM_setValue(name, val);
@@ -667,15 +667,17 @@ settings = {
         }
 
         if (set[k].sub) {
-          settings.save(set[k].sub.settings);
+          settings.save(set[k].sub.settings, true);
         }
       }
     }
 
-    logging.info("Saved new settings");
-    //reload page to apply settings
-    window.scrollTo(0,0);
-    location.reload();
+    if (!subset) {
+      logging.info("Saved new settings");
+      //reload page to apply settings
+      window.scrollTo(0,0);
+      location.reload();
+    }
   }
 },
 fixedElements = {
