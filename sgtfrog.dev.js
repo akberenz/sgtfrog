@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.11.4
+// @version      0.8.11.5
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -13,7 +13,6 @@
 // @grant        GM_addStyle
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @grant       GM_deleteValue
 // ==/UserScript==
 */
 
@@ -24,11 +23,6 @@ if ($(".nav__sits").length) {
   console.warn("[RIBBIT] User is not logged in, cannot run script.");
   throw new Error("No lilypad.");
 }
-
-
-//// TODO - remove in later release ////
-GM_deleteValue("reconfigure");
-//// END BLOCK ////
 
 
 // Variables //
