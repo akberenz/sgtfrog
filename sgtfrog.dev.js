@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.11.3
+// @version      0.8.11.4
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1633,13 +1633,13 @@ threads = {
       var findings = 0;
       var $comments = $doc.find(".comment");
       $.each($comments, function(i, comment) {
-        var $summary = $(comment).find(".comment__summary").first();
-        var id = $summary.attr("id");
+        var $summary = $(comment).find(".comment__summary").first(),
+            id = $summary.attr("id");
 
         if (id && !~frogTracks[set][tag].indexOf(id)) {
           frogTracks[set][tag].push(id);
           var $when = $summary.find(".comment__actions").find("span");
-          $when.parent().addClass("icon-green").attr("title", 'New ' + $when.attr("title"));
+          $when.parent().addClass("icon-green").attr("title", 'New');
           findings++;
         }
       });
