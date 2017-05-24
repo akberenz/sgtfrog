@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.11.5
+// @version      0.8.11.6
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1935,7 +1935,7 @@ profiles = {
         var $div = $(this);
         if ($div.children("input").length) { return; } //don't reset input if already set
 
-        $div.html("<input type='text' placeholder='Custom Tag' value='"+ (frogTags[tagKey][tagTarget] || "") +"' maxlength='16' />")
+        $div.html("<input type='text' placeholder='Custom Tag' value='"+ (frogTags[tagKey][tagTarget] || "") +"' maxlength='64' />")
             .on("keypress", function(ev) {
 
           var $this = $(this),
