@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.11.6
+// @version      0.8.11.7
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -84,7 +84,6 @@ var frogTracks = {
 };
 
 var frogShared = {};
-
 
 
 // Functions //
@@ -520,7 +519,7 @@ helpers = {
 
 settings = {
   invalidateOnSync: function() {
-    if (!frogVars.newBadges.value || !~location.href.indexOf("/profile/sync")) { return; }
+    if (!~location.href.indexOf("/account/settings/profile")) { return; }
 
     $(".form__sync-default").on("click", function() {
       logging.info("Initiated resync, invalidating lists");
