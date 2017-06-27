@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.11.7
+// @version      0.8.12
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1708,6 +1708,19 @@ users = {
       });
     });
   },
+  injectListRefresh: function() {
+    if (!frogVars.userLists.value || !~location.pathname.indexOf('/manage/')) { return; }
+
+    var type = location.pathname.substring(location.pathname.lastIndexOf('/')+1, location.pathname.indexOf('list'));
+
+    var reset = $("<a/>").attr('href', '#').attr('title', 'Resync SGT Frog')
+        .html("<em class='fa fa-refresh'></em>").on('click', function() {
+      helpers.listingPit.invalidateList(type);
+      window.location.reload(false);
+    });
+
+    $(".page__heading").append($("<div/>").html(reset));
+  },
   listenForLists: function(user, isHover) {
     if (user.indexOf("/user/") !== 0) { user = "/user/"+ user; }
 
@@ -2035,6 +2048,7 @@ pointless = {
     users.tagging.injectEditor($(".featured__heading__medium").text());
     users.listIndication($document);
     users.listenForLists($(".featured__heading__medium").text());
+    users.injectListRefresh();
 
     groups.profileHover($document);
     groups.tagging.show();
