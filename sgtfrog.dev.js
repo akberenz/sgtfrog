@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.12
+// @version      0.8.12.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1006,7 +1006,7 @@ loading = {
   imgDemand: function($doc) {
     if (!frogVars.onDemand.value) { return; }
 
-	  $.each($doc.find(".comment__description, .page__description").find("img"), function(i, img) {
+    $.each($doc.find(".comment__description, .page__description").find("img"), function(i, img) {
       var $this = $(this);
 
       $this.attr("data-on-demand", $this.attr("src")).attr("src", "");
@@ -1241,7 +1241,7 @@ giveaways = {
     }).done(function(data) {
       var $data = $(data);
 
-      $.each($data.find(".table__rows").find(".global__image-outer-wrap--avatar-small"), function(i, grp) {
+      $.each($data.find(".table__rows").find(".table_image_avatar"), function(i, grp) {
         $groupRow.append($(grp).css({"width": "28px", "height": "28px", "padding": "0", "margin-left": "0"}));
       });
 
@@ -1341,7 +1341,7 @@ giveaways = {
       GM_addStyle(".pagination{ clear: both; } " +
                     ".giveaway__row-outer-wrap{ width: 19%; margin-right: 1%; float: left; } " +
                     ".giveaway__row-inner-wrap{ display: block; } " +
-                    ".global__image-outer-wrap--game-medium{ width: initial; margin: 0 auto !important; } " + //important to override margins on :not(last)
+                    ".giveaway_image_thumbnail,.giveaway_image_thumbnail_missing{ width: initial; margin: 0 auto !important; } " + //important to override margins on :not(last)
                     ".giveaway__heading{ display: block; text-align: center; } " +
                     ".giveaway__heading:first-of-type{ height: auto; text-overflow: ellipsis; overflow: hidden; } " +
                     ".giveaway__columns-full{ display: block; } " +
@@ -1358,10 +1358,10 @@ giveaways = {
     $doc.find(".giveaway__columns").addClass("giveaway__columns-full");
     $.each($doc.find(".giveaway__row-outer-wrap"), function(i,wrap) {
       var $wrap = $(wrap);
-      $wrap.find(".global__image-outer-wrap--avatar-small").remove();
+      $wrap.find(".giveaway_image_avatar").remove();
 
       //move the game image to the top
-      $wrap.find(".giveaway__row-inner-wrap").prepend($wrap.find(".global__image-outer-wrap--game-medium").detach());
+      $wrap.find(".giveaway__row-inner-wrap").prepend($wrap.find(".giveaway_image_thumbnail,.giveaway_image_thumbnail_missing").detach());
 
       //split name from fee/actions
       $wrap.find(".giveaway__summary h2").append($("<h3/>").addClass("giveaway__heading")
@@ -1435,7 +1435,13 @@ giveaways = {
       switch(frogVars.activeTalk.value) {
         case 0: giveaways.activeThreads.hidden(); break;
         case 1: giveaways.activeThreads.sidebar(); break;
-        default: break;
+        default: giveaways.activeThreads.shown(); break;
+      }
+    },
+    shown: function() {
+      //special handling if grid view
+      if (frogVars.gridView.value) { 
+        $(".widget-container.widget-container--margin-top").siblings().addBack().css('clear', 'both');
       }
     },
     hidden: function() {
@@ -1656,7 +1662,7 @@ users = {
       }
 
       $.each(Object.keys(frogTags.users), function(i, taglet) {
-        $doc.find("a[href='/user/"+ taglet +"']").not(".global__image-outer-wrap").append(
+        $doc.find("a[href='/user/"+ taglet +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").append(
           $("<span/>").addClass("user__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags.users[taglet])
         );
       });
@@ -1694,8 +1700,8 @@ users = {
       logging.info("Applying white to "+ whitened.length +" users");
 
       $.each(whitened, function(i, white) {
-        $doc.find("a[href='"+ white +"']").not(".global__image-outer-wrap").addClass("user__whitened")
-          .attr("title", "Whitelisted user").prepend("<i class='fa fa-star-o'></i> ");
+        $doc.find("a[href='"+ white +"']").not(".global__image-outer-wrap,[class$='_image_avatar']")
+      .addClass("user__whitened").attr("title", "Whitelisted user").prepend("<i class='fa fa-star-o'></i> ");
       });
     });
 
@@ -1703,8 +1709,8 @@ users = {
       logging.info("Applying black to "+ blackened.length +" users");
 
       $.each(blackened, function(i, black) {
-        $doc.find("a[href='"+ black +"']").not(".global__image-outer-wrap").addClass("user__blackened")
-          .attr("title", "Blacklisted user").prepend("<i class='fa fa-ban'></i> ");
+        $doc.find("a[href='"+ black +"']").not(".global__image-outer-wrap,[class$='_image_avatar']")
+      .addClass("user__blackened").attr("title", "Blacklisted user").prepend("<i class='fa fa-ban'></i> ");
       });
     });
   },
@@ -1736,7 +1742,7 @@ users = {
 
       if (isHover) {
         var href = "a[href='"+ user +"']",
-            $name = $(href).not(".global__image-outer-wrap").not($(".hover-panel__outer-wrap").find(href));
+            $name = $(href).not(".global__image-outer-wrap,[class$='_image_avatar']").not($(".hover-panel__outer-wrap").find(href));
 
         $name.attr("title", "").removeClass("user__blackened").toggleClass("user__whitened").find("i").not(".fa-tag").remove();
         if ($name.hasClass("user__whitened")) {
@@ -1756,7 +1762,7 @@ users = {
 
       if (isHover) {
         var href = "a[href='"+ user +"']";
-        var $name = $(href).not(".global__image-outer-wrap").not($(".hover-panel__outer-wrap").find(href));
+        var $name = $(href).not(".global__image-outer-wrap,[class$='_image_avatar']").not($(".hover-panel__outer-wrap").find(href));
 
         $name.attr("title", "").removeClass("user__whitened").toggleClass("user__blackened").find("i").not(".fa-tag").remove();
         if ($name.hasClass("user__blackened")) {
@@ -1778,7 +1784,7 @@ groups = {
                   "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } ");
 
       $.each(Object.keys(frogTags.groups), function(i, taglet) {
-        $document.find("a[href='/group/"+ taglet +"']").not(".global__image-outer-wrap").append(
+        $document.find("a[href='/group/"+ taglet +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").append(
           $("<span/>").addClass("group__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags.groups[taglet])
         );
       });
@@ -1799,7 +1805,7 @@ profiles = {
     var width = 360, height = 160;
     if (!hasStyle) {
       GM_addStyle(".hover-panel__outer-wrap{ position: absolute; width: "+ width +"px; height: "+ height +"px; color: #21262f; } " +
-                  ".hover-panel__inner-wrap{ position: relative; width:100%; height: 100%; } " +
+                  ".hover-panel__inner-wrap{ position: relative; width: 100%; height: 100%; } " +
                   ".hover-panel__image{ position: absolute; top: 0; left: 0; width: "+ img +"px; height: "+ img +"px; " +
                   "  border-radius: 5px; } " +
                   ".hover-panel__corner{ position: absolute; top: "+ (img+pad) +"px; bottom: 0; left: 0; right: "+ (width-(img+pad)) +"px; " +
@@ -1826,12 +1832,16 @@ profiles = {
     }
 
     var hoverTime, lastLoad = null,
-        $userAvs = $doc.find(".global__image-outer-wrap--avatar-small").not(".global__image-outer-wrap--missing-image").children();
+        $userAvs = $doc.find(".global__image-inner-wrap,[class$='_image_avatar']")
+                        .not(".global__image-outer-wrap--missing-image");
 
     $.each($userAvs, function(i, av) {
-      var $av = $(av);
-      if ((isUser && !~$av.parent().attr("href").indexOf("/user/"))
-        || (!isUser && !~$av.parent().attr("href").indexOf("/group/"))) { return; }
+      var $av = $(av),
+          link = $av.attr("href") || $av.parent().attr("href"); //account for image-wrap usages
+      
+      if (!link 
+          || (isUser && !~link.indexOf("/user/"))
+          || (!isUser && !~link.indexOf("/group/"))) { return; }
 
       $av.hover(function(ev) {
         var $this = $(this);
@@ -1841,25 +1851,23 @@ profiles = {
           hoverTime = null;
         }
         hoverTime = window.setTimeout(function() {
-          var $parent = $this.parent();
-
           //reset box for new load (unless same profile)
-          if ($parent.attr("href") != lastLoad) {
+          if (link != lastLoad) {
             var $userimage = $box.find(".hover-panel__link"),
                 $userstats = $box.find(".hover-panel__stats"),
                 $usercorner = $box.find(".hover-panel__corner");
 
-            $userimage.attr("href", $parent.attr("href"));
+            $userimage.attr("href", link);
             $userimage.find("div").css("background-image", $this.css("background-image"));
             helpers.applyGradients($userstats.html(""), "#515763 0%, #2f3540 100%");
             helpers.applyGradients($usercorner.html($("<i/>").addClass("hover-panel__icon-load fa fa-spin fa-circle-o-notch")), "#424751 0%, #2f3540 100%");
 
             $.ajax({
               method: "GET",
-              url: $parent.attr("href")
+              url: link
             }).done(function(data) {
               var $data = $(data);
-              lastLoad = $parent.attr("href");
+              lastLoad = link;
 
               //apply role colors
               var $suspension = $data.find(".sidebar__suspension"),
@@ -1901,11 +1909,11 @@ profiles = {
               helpers.applyGradients($userstats, accent +" -20%, "+ base +" 80%");
 
               if (isUser) {
-                var user = $parent.attr("href");
+                var user = link;
                 users.listenForLists(user, true);
                 users.tagging.injectEditor(user, true);
               } else {
-                var group = $parent.attr("href").substring(7);
+                var group = link.substring(7);
                 groups.tagging.injectEditor(group, true);
               }
             });
@@ -1920,8 +1928,8 @@ profiles = {
           }
 
           $box.show()
-              .css("left", $target.offset().left - 1 - parseInt($parent.css("padding-left")) + edge)
-              .css("top", $target.offset().top - 1 - parseInt($parent.css("padding-top")));
+              .css("left", $target.offset().left - 1 - parseInt($this.parent().css("padding-left")) + edge)
+              .css("top", $target.offset().top - 1 - parseInt($this.parent().css("padding-top")));
         }, 250);
       }, function() {
         window.clearTimeout(hoverTime);
@@ -1967,7 +1975,7 @@ profiles = {
               frogTags[tagKey][tagTarget] = val;
 
               if (isHover) {
-                $("a[href='/"+ setName +"/"+ tagTarget +"']").not(".global__image-outer-wrap").append(
+                $("a[href='/"+ setName +"/"+ tagTarget +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").append(
                   $("<span/>").addClass(setName +"__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags[tagKey][tagTarget])
                 );
                 $(".hover-panel__outer-wrap").find("."+ setName +"__tagged").remove();
