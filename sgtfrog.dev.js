@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.12.1
+// @version      0.8.12.2
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -880,6 +880,10 @@ loading = {
 
         if (page++ < lastPage) {
           var loc = location.href;
+		  if (~loc.indexOf("#")) {
+			loc = loc.replace(/#\w+$/, ""); //anchor tags cause appending problems
+		  }
+
           if (~loc.indexOf("?")) {
             loc = loc.replace(/page=\d+?&?/, ""); //keep other params
           } else {
@@ -1440,7 +1444,7 @@ giveaways = {
     },
     shown: function() {
       //special handling if grid view
-      if (frogVars.gridView.value) { 
+      if (frogVars.gridView.value) {
         $(".widget-container.widget-container--margin-top").siblings().addBack().css('clear', 'both');
       }
     },
@@ -1838,8 +1842,8 @@ profiles = {
     $.each($userAvs, function(i, av) {
       var $av = $(av),
           link = $av.attr("href") || $av.parent().attr("href"); //account for image-wrap usages
-      
-      if (!link 
+
+      if (!link
           || (isUser && !~link.indexOf("/user/"))
           || (!isUser && !~link.indexOf("/group/"))) { return; }
 
