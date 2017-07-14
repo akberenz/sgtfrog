@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.12.2
+// @version      0.8.12.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1278,15 +1278,17 @@ giveaways = {
 
     if (!hasStyle) {
       GM_addStyle(".sidebar__shortcut-inner-wrap div{ padding: 0; } " +
-                 ".sidebar__shortcut-inner-wrap .sidebar__error{ border-color: #f0d1dc #e5bccc #d9a7ba #ebbecf; }");
+                  ".sidebar__shortcut-inner-wrap .sidebar__error{ border-color: #f0d1dc #e5bccc #d9a7ba #ebbecf; }");
     }
 
     var $side = $(".sidebar__navigation").parent();
-    var $entry = $side.children().first().not(".sidebar__mpu").detach();
-    if (!$entry.hasClass("sidebar__error")) {
-      $entry.css("background-image", "none").css("border", "none");
-    } else {
-      helpers.applyGradients($entry, "#f7edf1 0%, #e6d9de 100%");
+    var $entry = $side.children("form").detach();
+    if ($entry) {
+      if (!$entry.hasClass("sidebar__error")) {
+        $entry.css("background-image", "none").css("border", "none");
+      } else {
+        helpers.applyGradients($entry, "#f7edf1 0%, #e6d9de 100%");
+      }
     }
 
     $("<div/>").addClass("sidebar__shortcut-inner-wrap")
