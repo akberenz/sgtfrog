@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.12.3
+// @version      0.8.12.4
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1459,15 +1459,17 @@ giveaways = {
       //no 'Active Discussions' section on page
       if ($(".widget-container.widget-container--margin-top").length === 0) { return; }
 
-      var $list = $("<ul/>").addClass("sidebar__navigation");
-      $.each($(".table__row-inner-wrap"), function(i, thread) {
-        var $thread = $(thread);
-        var $origin = $thread.find(".table__column--width-fill").first();
-        var $topic = $origin.find("h3").find("a");
+      var $list = $("<ul/>").addClass("sidebar__navigation"),
+          $container = $(".homepage_heading[href='/discussions']").siblings(".table");
+
+      $.each($container.find(".table__row-inner-wrap"), function(i, thread) {
+        var $thread = $(thread),
+            $origin = $thread.find(".table__column--width-fill").first(),
+            $topic = $origin.find("h3").find("a");
 
         $list.append(helpers.makeSideLink($topic.attr("href"), $topic.html(),
-                                               $thread.find(".table__column--width-small").find("a").html(),
-                                               "by "+ $origin.find("a").last().html()));
+                                               $origin.find("a.table__column__secondary-link").first().html().replace(/ comments/i, ""),
+                                               "by "+ $thread.find(".table_image_avatar").attr("href").replace("/user/", "")));
       });
 
       $("<h3/>").addClass("sidebar__heading").html("Active Discussions")
