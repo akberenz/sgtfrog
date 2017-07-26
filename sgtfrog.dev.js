@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.12.4
+// @version      0.8.12.5
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -2047,6 +2047,7 @@ pointless = {
     giveaways.gridForm($document);
     giveaways.activeThreads.find();
     giveaways.injectWinnerTools();
+    giveaways.injectEndDate();
     giveaways.expandedGroups();
     giveaways.continueHiding();
 
@@ -2069,25 +2070,23 @@ pointless = {
     groups.profileHover($document);
     groups.tagging.show();
     groups.tagging.injectEditor(location.pathname.substring(location.pathname.indexOf("/group/")+7));
-
-
-    window.setTimeout(function() {
-      $document.scroll();
-
-      try {
-        giveaways.bulkFeatured.find();
-        threads.collapseDiscussion();
-
-        giveaways.injectEndDate();
-      }
-      catch(err) {
-        logging.alert(err);
-      }
-    }, 100);
   }
   catch(err) {
     logging.alert(err);
   }
+
+  //these need delayed to function properly
+  $(window).load(function() {
+    $document.scroll();
+
+    try {
+      giveaways.bulkFeatured.find();
+      threads.collapseDiscussion();
+    }
+    catch(err) {
+      logging.alert(err);
+    }
+  });
 })();
 
 
