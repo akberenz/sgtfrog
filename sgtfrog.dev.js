@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.12.5
+// @version      0.8.12.6
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1370,8 +1370,15 @@ giveaways = {
       $wrap.find(".giveaway__row-inner-wrap").prepend($wrap.find(".giveaway_image_thumbnail,.giveaway_image_thumbnail_missing").detach());
 
       //split name from fee/actions
-      $wrap.find(".giveaway__summary h2").append($("<h3/>").addClass("giveaway__heading")
-                                                 .html($wrap.find(".giveaway__heading").children().not(".giveaway__heading__name").detach()));
+      var feeActions = $wrap.find(".giveaway__heading").children().not(".giveaway__heading__name").detach();
+      if (!feeActions.length) { 
+        //ensure proper height for invite only GA's
+        feeActions = "<span class='giveaway__heading__thin'>(??P)</span>" +
+                    "<a class='giveaway__icon'><i class='fa fa-question-circle'></i></a>" + 
+                    "<a class='giveaway__icon'><i class='fa fa-question-circle-o'></i></a>"; 
+      }
+
+      $wrap.find(".giveaway__summary h2").append($("<h3/>").addClass("giveaway__heading").html(feeActions));
 
       //badges in a single row
       $wrap.find(".giveaway__columns").before($("<div/>").addClass("giveaway__columns giveaway__columns--badges")
