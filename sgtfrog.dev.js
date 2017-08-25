@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.12.7
+// @version      0.8.13
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1373,11 +1373,11 @@ giveaways = {
 
       //split name from fee/actions
       var feeActions = $wrap.find(".giveaway__heading").children().not(".giveaway__heading__name").detach();
-      if (!feeActions.length) { 
+      if (!feeActions.length) {
         //ensure proper height for invite only GA's
         feeActions = "<span class='giveaway__heading__thin'>(??P)</span>" +
-                    "<a class='giveaway__icon'><i class='fa fa-question-circle'></i></a>" + 
-                    "<a class='giveaway__icon'><i class='fa fa-question-circle-o'></i></a>"; 
+                    "<a class='giveaway__icon'><i class='fa fa-question-circle'></i></a>" +
+                    "<a class='giveaway__icon'><i class='fa fa-question-circle-o'></i></a>";
       }
 
       $wrap.find(".giveaway__summary h2").append($("<h3/>").addClass("giveaway__heading").html(feeActions));
@@ -1675,11 +1675,12 @@ users = {
 
       if (!hasStyle) {
         GM_addStyle(".user__tagged{ text-decoration: none; border-radius: 4px; padding: 2px 4px; margin-left: .5em; background-color: rgba(0,0,0,.01); " +
-                    "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } ");
+                    "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } " +
+                    " .comment__username--op .user__tagged{ color: #fff; } ");
       }
 
       $.each(Object.keys(frogTags.users), function(i, taglet) {
-        $doc.find("a[href='/user/"+ taglet +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").append(
+        $doc.find("a[href='/user/"+ taglet +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").after(
           $("<span/>").addClass("user__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags.users[taglet])
         );
       });
@@ -1710,7 +1711,9 @@ users = {
 
       //using !important selector on 'color' to override the :not(.comment__username--op) selector color
       GM_addStyle("a.user__whitened{ background-color: "+ wlBack +"; color: "+ wlFore +" !important; border-radius: 4px; padding: 3px 5px; text-shadow: none; } " +
-                  "a.user__blackened{ background-color: "+ blBack +"; color: "+ blFore +" !important; border-radius: 4px; padding: 3px 5px; text-shadow: none; } ");
+                  "a.user__blackened{ background-color: "+ blBack +"; color: "+ blFore +" !important; border-radius: 4px; padding: 3px 5px; text-shadow: none; } " +
+                  "a.user__whitened i{ color: "+ wlFore +" } " +
+                  "a.user__blackened i{ color: "+ blFore +" } ");
     }
 
     helpers.listingPit.getList("white", function(whitened) {
@@ -1801,7 +1804,7 @@ groups = {
                   "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } ");
 
       $.each(Object.keys(frogTags.groups), function(i, taglet) {
-        $document.find("a[href='/group/"+ taglet +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").append(
+        $document.find("a[href='/group/"+ taglet +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").after(
           $("<span/>").addClass("group__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags.groups[taglet])
         );
       });
@@ -1981,7 +1984,7 @@ profiles = {
           if (code == 13) {
             var val = $(this).children("input").val();
             $div.html("<a>"+ ielm + (val || "Add Tag") +"</a>");
-            $("a[href='/"+ setName +"/"+ tagTarget +"']").find("."+ setName +"__tagged").remove();
+            $("a[href='/"+ setName +"/"+ tagTarget +"']").siblings("."+ setName +"__tagged").remove();
 
             logging.debug("Changing " + setName + " value to " + val);
 
@@ -1992,7 +1995,7 @@ profiles = {
               frogTags[tagKey][tagTarget] = val;
 
               if (isHover) {
-                $("a[href='/"+ setName +"/"+ tagTarget +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").append(
+                $("a[href='/"+ setName +"/"+ tagTarget +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").after(
                   $("<span/>").addClass(setName +"__tagged").html("<i class='fa fa-tag fa-flip-horizontal'></i> "+ frogTags[tagKey][tagTarget])
                 );
                 $(".hover-panel__outer-wrap").find("."+ setName +"__tagged").remove();
