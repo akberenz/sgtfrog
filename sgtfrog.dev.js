@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.13
+// @version      0.8.14
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -694,20 +694,29 @@ fixedElements = {
     if (!(frogVars.fixedElms.value & 2)) { return; }
 
     var offset = frogVars.fixedElms.value&4 ? 64 : 25;
-    GM_addStyle(".sidebar .fixed{ position: fixed; top: " + offset + "px; }");
+    GM_addStyle(".sidebar .fixed{ position: fixed; }");
 
     var $sidebar = $(".sidebar"),
         $sidewrap = $("<div/>").addClass("sidebar__outer-wrap"),
         $sidead = $(".sidebar__mpu"); //hide the advertisement on scroll
 
-    //create a wrap to avoid loss of panel width
+    //create a wrap to avoid loss of panel dimensions
     $sidebar.children().detach().appendTo($sidewrap);
     $sidewrap.appendTo($sidebar);
+    $sidebar.on('adjusted', function() { $sidebar.css({"min-height": $sidewrap.height()}); });
+    $sidebar.trigger("adjusted");
 
     $document.on("scroll", function() {
-      var pickup = $(".featured__container").height() + 64;
-      if ($document.scrollTop() > (pickup - offset)) {
-        $sidebar.children().addClass("fixed");
+      var scrollAt = $document.scrollTop(),
+          selfHeight = $sidewrap.height(),
+          pickup = $(".featured__container").height() + 64,
+          footerStart = $(".footer__outer-wrap").offset().top;
+
+      if (((frogVars.fixedElms.value&1) == 0) && (offset + scrollAt + selfHeight) > footerStart) {
+        //stop following at footer (unless both are floating)
+        $sidebar.children().css({"top": -(offset + scrollAt + selfHeight - footerStart)});
+      } else if (scrollAt > (pickup - offset)) {
+        $sidebar.children().addClass("fixed").css({"top": offset});
         $sidead.hide();
       } else {
         $sidebar.children().removeClass("fixed");
@@ -1483,6 +1492,7 @@ giveaways = {
 
       $("<h3/>").addClass("sidebar__heading").html("Active Discussions")
         .insertAfter($sideentry).after($list);
+      $(".sidebar").trigger("adjusted");
 
       giveaways.activeThreads.hidden();
     }
