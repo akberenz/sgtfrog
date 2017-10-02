@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      0.8.14.2
+// @version      0.8.14.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1404,6 +1404,9 @@ giveaways = {
       $link = $wrap.find(".fa-comment").next();
       $link.html($link.text().replace(/([\d,]+) \w+/, "$1"));
     });
+
+    //clear float from all post content
+    $(".giveaway__row-outer-wrap").first().parent().next().css("clear", "both");
 
     //fix featured background to fill area
     $doc.find(".pinned-giveaways__inner-wrap").append($("<div/>").addClass("giveaway__row--empty"));
