@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.2
+// @version      1.0.0-alpha.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -557,7 +557,7 @@ helpers = {
       /* Conditionals (would affect layout if feature disabled) */
 
       //settings page
-      if (location.pathname === "/%C4%85ccount/settings/ribbit") {
+      if (location.pathname === "/accoumt/settings/ribbit") {
         sSheet += "body{ background-image: none; background-color: #95A4C0; } " +
                   ".form__row__sub{ margin-left: 2.5em; } " +
                   ".form__row__sub .form__heading__text{ color: #5A89FF; }";
@@ -694,7 +694,12 @@ settings = {
 
     //inject button in nav
     var $menu = $("<div/>").addClass("nav__button-container");
-    $("<a/>").addClass("nav__button nav__buton--is-dropdown").attr("href", "/ąccount/settings/ribbit")
+    if (isActive) {
+      $(".nav__button-container.is-selected").removeClass("is-selected");
+      $menu.addClass("is-selected");
+    }
+    
+    $("<a/>").addClass("nav__button nav__button--is-dropdown").attr("href", "/accoumt/settings/ribbit")
       .html("SGT frog").appendTo($menu);
     $("<div/>").addClass("nav__button nav__button--is-dropdown-arrow").html("<i class='fa fa-angle-down'></i>").appendTo($menu)
       .on("click", function(ev) {
@@ -705,7 +710,7 @@ settings = {
 
     var $drop = $("<div/>").addClass("nav__relative-dropdown is-hidden").appendTo($menu);
     $("<div/>").addClass("nav__absolute-dropdown")
-      .append(helpers.makeTopLink("/ąccount/settings/ribbit", "Settings", "Adjust tool functionality.", "gears", "grey"))
+      .append(helpers.makeTopLink("/accoumt/settings/ribbit", "Settings", "Adjust tool functionality.", "gears", "grey"))
       .append(helpers.makeTopLink("https://github.com/bberenz/sgtfrog/issues", "Feedback", "Report an issue or request a feature.", "github", "green"))
       .append(helpers.makeTopLink("https://www.steamgifts.com/discussion/4C3Cl/userscript-steamgifts-tinkerer-featuring-refined-ostensible-gain", "Discussion", "View the SteamGifts discussion thread.", "square-o", "blue"))
       .appendTo($drop);
@@ -713,16 +718,16 @@ settings = {
     $(".nav__right-container").find(".nav__button-container:not(.nav__button-container--notification)").last().before($menu);
 
     //inject link on account settings
-    var $link = helpers.makeSideLink("/ąccount/settings/ribbit", "SGT frog");
-    $(".sidebar__navigation").find("a[href='/account/settings/sales']").parent().after($link);
+    var $link = helpers.makeSideLink("/accoumt/settings/ribbit", "SGT frog");
+    $(".sidebar__navigation").find("a[href='/account/settings/giveaways']").parent().after($link);
     if (isActive) {
       $link.addClass("is-selected");
       $link.find(".sidebar__navigation__item__name").before("<i class='fa fa-caret-right'></i>");
     }
   },
   injectPage: function() {
-    //SG redirects invalid "/account/" links, so we fake the 'a' to blend in
-    if (location.pathname === "/%C4%85ccount/settings/ribbit") {
+    //SG redirects invalid "/account/" links, so we fake it to blend in
+    if (location.pathname === "/accoumt/settings/ribbit") {
       logging.info("Creating custom settings page");
 
       var $dark = $("style").detach(); //compatibility with dark theme
@@ -749,7 +754,7 @@ settings = {
 
         //re-skin
         $(".page__heading__breadcrumbs").children("a").last()
-          .html("Sgt Frog").attr("href", "/ąccount/settings/ribbit");
+          .html("Sgt Frog").attr("href", "/accoumt/settings/ribbit");
         $(".sidebar__navigation").find("a[href='" + usePage + "']").parent()
           .removeClass("is-selected").find("i").remove();
         $("title").html("Account - Settings - Ribbit");
