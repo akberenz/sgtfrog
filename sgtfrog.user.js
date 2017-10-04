@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.1
+// @version      1.0.0-alpha.2
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -514,6 +514,167 @@ helpers = {
                $text.prop("selectionStart", selTo).prop("selectionEnd", selTo);
              });
     }
+  },
+  style: {
+    apply: function() {
+      var sSheet = "" +
+
+      /* Statics (no effect on layout if feature disabled) */
+
+      //stickies
+      "header.fixed{ position: fixed; top: 0; width: 100%; z-index: 100; } " +
+      ".left-above{ margin-top: 39px !important; }" + // !important on margin for compatibility with dark theme
+      ".sidebar .fixed{ position: fixed; }" +
+      ".footer__outer-wrap.fixed{ position: fixed; bottom: 0; width: 100%; background-color: #95a4c0; z-index: 100; } " +
+      ".left-below{ margin-bottom: 45px; }" +
+
+      //Continuous load spinner
+      ".pagination__loader{ text-align: center; margin-top: 1em; } " +
+      ".pagination__loader .fa{ font-size: 2em; } " +
+
+      //GA 'find similar'
+      ".sidebar__shortcut-inner-wrap div{ padding: 0; } " +
+      ".sidebar__shortcut-inner-wrap .sidebar__error{ border-color: #f0d1dc #e5bccc #d9a7ba #ebbecf; }" +
+
+      //Feature GA collapse - removes expanded bottom margin for use on collapse button
+      ".pinned-giveaways__button{ clear: both; } " +
+      ".pinned-giveaways__inner-wrap:not(.pinned-giveaways__inner-wrap--minimized){ border-radius: 4px 4px 0 0; margin-bottom: 0; }" +
+
+      //User tags
+      ".user__tagged{ text-decoration: none; border-radius: 4px; padding: 2px 4px; margin-left: .5em; background-color: rgba(0,0,0,.01);" +
+      "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } " +
+      ".comment__username--op .user__tagged{ color: #fff; } " +
+
+      //Group tags
+      ".group__tagged{ text-decoration: none; border-radius: 4px; padding: 2px 4px; margin-left: .5em; background-color: rgba(0,0,0,.01);" +
+      "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } " +
+
+      //Comment format buttons
+      ".button-container{ display: flex; } " +
+      ".align-button-container-top{ margin-bottom: 5px; }"
+
+
+      /* Conditionals (would affect layout if feature disabled) */
+
+      //settings page
+      if (location.pathname === "/%C4%85ccount/settings/ribbit") {
+        sSheet += "body{ background-image: none; background-color: #95A4C0; } " +
+                  ".form__row__sub{ margin-left: 2.5em; } " +
+                  ".form__row__sub .form__heading__text{ color: #5A89FF; }";
+      }
+
+      //badges
+      if (frogVars.newBadges.value) {
+        sSheet += ".giveaway__column--wish{ background-image: linear-gradient(#FFFACF 0%, #FFF176 100%); " +
+                  "  background-image: -moz-linear-gradient(#FFFACF 0%, #FFF176 100%); " +
+                  "  background-image: -webkit-linear-gradient(#FFFACF 0%, #FFF176 100%); " +
+                  "  border-color: #EDCCBE #F0C2AF #DEAB95 #F2C4B1 !important; color: #F57F17; " +
+                  "  box-shadow: none !important; }" +
+
+                  ".giveaway__column--new{ " +
+                  "  background-image: linear-gradient(#FFE0B2 0%, #FFB74D 100%); " +
+                  "  background-image: -moz-linear-gradient(#FFE0B2 0%, #FFB74D 100%); " +
+                  "  background-image: -webkit-linear-gradient(#FFE0B2 0%, #FFB74D 100%); " +
+                  "  border-color: #FFCCBC #FFAB91 #FF8A65 #FFAB91 !important; color: #BF360C; " +
+                  "  box-shadow: none !important; }";
+      }
+      if (frogVars.colorBadge.value) {
+        sSheet += ".giveaway__column--invite-only{ background-image: linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
+                  "  background-image: -moz-linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
+                  "  background-image: -webkit-linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
+                  "  border-color: #ef9a9a #e57373 #ef5350 #e57373 !important; color: #950000; }"+
+
+                  ".giveaway__column--region-restricted{ background-image: linear-gradient(#D7CCC8 0%, #A18F89 100%); " +
+                  "  background-image: -moz-linear-gradient(#D7CCC8 0%, #A18F89 100%); " +
+                  "  background-image: -webkit-linear-gradient(#D7CCC8 0%, #A18F89 100%); " +
+                  "  border-color: #BDBDBD #9E9E9E #757575 #9E9E9E !important; color: #5D4037; }"+
+
+                  ".giveaway__column--whitelist{ background-image: linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
+                  "  background-image: -moz-linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
+                  "  background-image: -webkit-linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
+                  "  color: #D81B60 !important; }"+
+
+                  ".giveaway__column--group{ background-image: linear-gradient(#DCEDC8 0%, #AED581 100%); " +
+                  "  background-image: -moz-linear-gradient(#DCEDC8 0%, #AED581 100%); " +
+                  "  background-image: -webkit-linear-gradient(#DCEDC8 0%, #AED581 100%); }";
+      }
+
+      //grid
+      if (frogVars.gridView.value) {
+        sSheet += ".pagination{ clear: both; } " +
+                  ".giveaway__row-outer-wrap{ width: 19%; margin-right: 1%; float: left; } " +
+                  ".giveaway__row-inner-wrap{ display: block; } " +
+                  ".giveaway_image_thumbnail,.giveaway_image_thumbnail_missing{ width: initial; margin: 0 auto !important; } " + //important to override margins on :not(last)
+                  ".giveaway__heading{ display: block; text-align: center; } " +
+                  ".giveaway__heading:first-of-type{ height: auto; text-overflow: ellipsis; overflow: hidden; } " +
+                  ".giveaway__columns-full{ display: block; } " +
+                  ".giveaway__columns-full > :not(:last-child){ margin: 0 0 5px 0; } " +
+                  ".giveaway__columns--badges{ margin-bottom: 5px; } " +
+                  ".giveaway__columns--badges > .giveaway__column--contributor-level:not(.giveaway__column--empty){" +
+                  "  -webkit-box-flex: 1; -moz-box-flex: 1; -webkit-flex: 1; -ms-flex: 1; flex: 1; } " +
+                  ".giveaway__column--empty{ height: 26px; width: 0; padding: 0; margin: 0 !important; visibility: hidden; } " + //important to force no widths
+                  ".giveaway__links{ display: block; margin-top: 5px; } " +
+                  ".giveaway__links a{ margin-right: 5px; } " +
+                  ".pinned-giveaways__inner-wrap--minimized .giveaway__row-outer-wrap:nth-child(-n+5){ display: initial; } " +
+                  ".giveaway__row--empty{ clear: both; } ";
+      }
+
+      //copy count colors
+      if (frogVars.moreCopies.value) {
+        var cpyFore = frogVars.moreCopies.sub.settings.moreCopyLabel.value.Foreground || "#F0F2F5",
+            cpyBack = frogVars.moreCopies.sub.settings.moreCopyLabel.value.Background || "#6B7A8C"
+
+        if (!~cpyFore.indexOf("#")) { cpyFore = "#"+cpyFore; }
+        if (!~cpyBack.indexOf("#")) { cpyBack = "#"+cpyBack; }
+
+        sSheet += ".copies__tagged{ text-shadow: none; border-radius: 2px; padding: 1px 2px; " +
+                  "  color: "+ cpyFore +"; background-color: "+ cpyBack +"; " +
+                  "  font-weight: "+ (frogVars.moreCopies.sub.settings.moreCopyBold.value? 'bold':'inherit') +"; }";
+      }
+
+      //user list colors
+      if (frogVars.userLists.value) {
+        var wlFore = frogVars.userLists.sub.settings.userWhite.value.Foreground || "#2A2",
+            wlBack = frogVars.userLists.sub.settings.userWhite.value.Background || "#FFF",
+            blFore = frogVars.userLists.sub.settings.userBlack.value.Foreground || "#C55",
+            blBack = frogVars.userLists.sub.settings.userBlack.value.Background || "#000";
+
+        if (!~wlFore.indexOf("#")) { wlFore = "#"+wlFore; }
+        if (!~wlBack.indexOf("#")) { wlBack = "#"+wlBack; }
+        if (!~blFore.indexOf("#")) { blFore = "#"+blFore; }
+        if (!~blBack.indexOf("#")) { blBack = "#"+blBack; }
+
+        //using !important selector on 'color' to override the :not(.comment__username--op) selector color
+        sSheet += "a.user__whitened{ background-color: "+ wlBack +"; color: "+ wlFore +" !important; border-radius: 4px; padding: 3px 5px; text-shadow: none; } " +
+                  "a.user__blackened{ background-color: "+ blBack +"; color: "+ blFore +" !important; border-radius: 4px; padding: 3px 5px; text-shadow: none; } " +
+                  "a.user__whitened i{ color: "+ wlFore +" } " +
+                  "a.user__blackened i{ color: "+ blFore +" } ";
+      }
+
+      //profile hover
+      if (frogVars.hoverInfo.value) {
+        var img = 64, pad = 5,
+            width = 360, height = 160;
+
+        sSheet += ".hover-panel__outer-wrap{ position: absolute; width: "+ width +"px; height: "+ height +"px; color: #21262f; } " +
+                  ".hover-panel__inner-wrap{ position: relative; width: 100%; height: 100%; } " +
+                  ".hover-panel__image{ position: absolute; top: 0; left: 0; width: "+ img +"px; height: "+ img +"px; border-radius: 5px; } " +
+                  ".hover-panel__corner{ position: absolute; top: "+ (img+pad) +"px; bottom: 0; left: 0; right: "+ (width-(img+pad)) +"px;" +
+                  "  padding: 5px; background-color: #465670; border-radius: 3px 0 0 3px; } " +
+                  ".hover-panel__corner .hover-panel__icon-load{ font-size: 5em; color: rgba(255,255,255,0.6); } " +
+                  ".hover-panel__corner .sidebar__shortcut-inner-wrap{ display: block; } " +
+                  ".hover-panel__corner .sidebar__shortcut__whitelist{ margin: 0 0 5px 0; }" +
+                  ".hover-panel__stats{ position: absolute; top: 0; bottom: 0; left: "+ (img+pad) +"px; right: 0;" +
+                  "  padding: 5px; background-color: #465670; border-radius: 3px 3px 3px 0; } " +
+                  ".hover-panel__stats .featured__heading__medium{ font-size: 16px; } " +
+                  ".hover-panel__stats .featured__heading{ margin-bottom: 0; } " +
+                  ".hover-panel__stats .featured__table__column{ margin: 0; } ";
+      }
+
+      
+      /* Application */
+      GM_addStyle(sSheet);
+    }
   }
 },
 
@@ -563,10 +724,6 @@ settings = {
     //SG redirects invalid "/account/" links, so we fake the 'a' to blend in
     if (location.pathname === "/%C4%85ccount/settings/ribbit") {
       logging.info("Creating custom settings page");
-
-      GM_addStyle("body{ background-image: none; background-color: #95A4C0; } " +
-                  ".form__row__sub{ margin-left: 2.5em; } " +
-                  ".form__row__sub .form__heading__text{ color: #5A89FF; }");
 
       var $dark = $("style").detach(); //compatibility with dark theme
       $("html").empty();
@@ -679,10 +836,6 @@ fixedElements = {
   header: function() {
     if (!(frogVars.fixedElms.value & 4)) { return; }
 
-    // !important on margin for compatibility with dark theme
-    GM_addStyle("header.fixed{ position: fixed; top: 0; width: 100%; z-index: 100; } " +
-                ".left-above{ margin-top: 39px !important; }");
-
     $("header").addClass("fixed");
 
     var $feature = $(".featured__container");
@@ -695,10 +848,8 @@ fixedElements = {
   sidebar: function() {
     if (!(frogVars.fixedElms.value & 2)) { return; }
 
-    var offset = frogVars.fixedElms.value&4 ? 64 : 25;
-    GM_addStyle(".sidebar .fixed{ position: fixed; }");
-
-    var $sidebar = $(".sidebar"),
+    var offset = frogVars.fixedElms.value&4 ? 64 : 25,
+        $sidebar = $(".sidebar"),
         $sidewrap = $("<div/>").addClass("sidebar__outer-wrap"),
         $sidead = $(".sidebar__mpu"); //hide the advertisement on scroll
 
@@ -734,10 +885,6 @@ fixedElements = {
   footer: function() {
     if (!(frogVars.fixedElms.value & 1)) { return; }
 
-    GM_addStyle(".footer__outer-wrap.fixed{ position: fixed; bottom: 0; width: 100%; " +
-                "  background-color: #95a4c0; z-index: 100; } " +
-                ".left-below{ margin-bottom: 45px; }");
-
     $(".footer__outer-wrap").addClass("fixed");
     $(".page__outer-wrap").addClass("left-below");
   }
@@ -751,22 +898,22 @@ loading = {
   },
   everyNew: {
     giveawayPage: function($doc) {
-      giveaways.injectFlags.wishlist($doc, true);
-      giveaways.injectFlags.recent($doc, true);
+      giveaways.injectFlags.wishlist($doc);
+      giveaways.injectFlags.recent($doc);
       giveaways.injectChance($doc);
-      giveaways.highlightCopies($doc, true);
-      giveaways.injectSearch($doc, true);
+      giveaways.highlightCopies($doc);
+      giveaways.injectSearch($doc);
       giveaways.hideEntered($doc);
       giveaways.easyHide($doc);
-      giveaways.gridForm($doc, true);
-      users.profileHover($doc, true);
-      users.tagging.show($doc, true);
-      users.listIndication($doc, true);
+      giveaways.gridForm($doc);
+      users.profileHover($doc);
+      users.tagging.show($doc);
+      users.listIndication($doc);
     },
     commentPage: function($doc) {
-      users.profileHover($doc, true);
-      users.tagging.show($doc, true);
-      users.listIndication($doc, true);
+      users.profileHover($doc);
+      users.tagging.show($doc);
+      users.listIndication($doc);
       threads.injectTimes($doc);
       threads.tracking.all($doc);
       threads.commentBox.injectEdit($doc);
@@ -776,9 +923,6 @@ loading = {
   giveaways: function() {
     //avoid stepping on other loading pages
     if (!(frogVars.loadLists.value & 8) || !helpers.pageSet.GAList()) { return; }
-
-    GM_addStyle(".pagination__loader{ text-align: center; margin-top: 1em; } " +
-                ".pagination__loader .fa{ font-size: 2em; } ");
 
     var page = helpers.fromQuery("page");
     if (page == undefined) { page = 1; }
@@ -862,9 +1006,6 @@ loading = {
     loading.comments();
   },
   comments: function() {
-    GM_addStyle(".pagination__loader{ text-align: center; margin-top: 1em; } " +
-                ".pagination__loader .fa{ font-size: 2em; } ");
-
     var page = helpers.fromQuery("page");
     if (page == undefined) { page = 1; }
     var lastPage = $(".pagination__navigation").children().last().attr('data-page-number');
@@ -891,9 +1032,9 @@ loading = {
 
         if (page++ < lastPage) {
           var loc = location.href;
-		  if (~loc.indexOf("#")) {
-			loc = loc.replace(/#\w+$/, ""); //anchor tags cause appending problems
-		  }
+          if (~loc.indexOf("#")) {
+            loc = loc.replace(/#\w+$/, ""); //anchor tags cause appending problems
+          }
 
           if (~loc.indexOf("?")) {
             loc = loc.replace(/page=\d+?&?/, ""); //keep other params
@@ -927,9 +1068,6 @@ loading = {
   },
   tables: function() {
     if (!(frogVars.loadLists.value & 1) || !helpers.pageSet.TableList()) { return; }
-
-    GM_addStyle(".pagination__loader{ text-align: center; margin-top: 1em; } " +
-                ".pagination__loader .fa{ font-size: 2em; } ");
 
     var page = helpers.fromQuery("page");
     if (page == undefined) { page = 1; }
@@ -1070,25 +1208,11 @@ giveaways = {
         giveaways.injectFlags.wishlist($doc);
         giveaways.injectFlags.recent($doc);
       }
-      if (frogVars.colorBadge.value) {
-        giveaways.injectFlags.invite();
-        giveaways.injectFlags.region();
-        giveaways.injectFlags.whitelist();
-        giveaways.injectFlags.group();
-      }
     },
-    wishlist: function($doc, hasStyle) {
+    wishlist: function($doc) {
       var $gives = $(".giveaway__row-outer-wrap");
 
       if ($gives.length > 0) {
-        if (!hasStyle) {
-          GM_addStyle(".giveaway__column--wish{ background-image: linear-gradient(#FFFACF 0%, #FFF176 100%); " +
-                    "  background-image: -moz-linear-gradient(#FFFACF 0%, #FFF176 100%); " +
-                    "  background-image: -webkit-linear-gradient(#FFFACF 0%, #FFF176 100%); " +
-                    "  border-color: #EDCCBE #F0C2AF #DEAB95 #F2C4B1 !important; color: #F57F17; " +
-                    "  box-shadow: none !important; }");
-        }
-
         var $badge = $("<div/>").addClass("giveaway__column--wish").attr("title", "Wishlist");
         $("<i/>").addClass("fa fa-fw fa-star").appendTo($badge);
 
@@ -1113,16 +1237,7 @@ giveaways = {
         });
       }
     },
-    recent: function($doc, hasStyle) {
-      if (!hasStyle) {
-        GM_addStyle(".giveaway__column--new{ " +
-                      "  background-image: linear-gradient(#FFE0B2 0%, #FFB74D 100%); " +
-                      "  background-image: -moz-linear-gradient(#FFE0B2 0%, #FFB74D 100%); " +
-                      "  background-image: -webkit-linear-gradient(#FFE0B2 0%, #FFB74D 100%); " +
-                      "  border-color: #FFCCBC #FFAB91 #FF8A65 #FFAB91 !important; color: #BF360C; " +
-                      "  box-shadow: none !important; }");
-      }
-
+    recent: function($doc) {
       var $badge = $("<div/>").addClass("giveaway__column--new").attr("title", "New");
         $("<i/>").addClass("fa fa-fw fa-fire").appendTo($badge);
 
@@ -1133,29 +1248,6 @@ giveaways = {
          $created.parent().parent().find(".giveaway__column--width-fill").after($badge.clone());
         }
       });
-    },
-    invite: function() {
-      GM_addStyle(".giveaway__column--invite-only{ background-image: linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
-                    "  background-image: -moz-linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
-                    "  background-image: -webkit-linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
-                    "  border-color: #ef9a9a #e57373 #ef5350 #e57373 !important; color: #950000; }");
-    },
-    region: function() {
-      GM_addStyle(".giveaway__column--region-restricted{ background-image: linear-gradient(#D7CCC8 0%, #A18F89 100%); " +
-                    "  background-image: -moz-linear-gradient(#D7CCC8 0%, #A18F89 100%); " +
-                    "  background-image: -webkit-linear-gradient(#D7CCC8 0%, #A18F89 100%); " +
-                    "  border-color: #BDBDBD #9E9E9E #757575 #9E9E9E !important; color: #5D4037; }");
-    },
-    whitelist: function() {
-      GM_addStyle(".giveaway__column--whitelist{ background-image: linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
-                  "  background-image: -moz-linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
-                  "  background-image: -webkit-linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
-                  "  color: #D81B60 !important; }");
-    },
-    group: function() {
-      GM_addStyle(".giveaway__column--group{ background-image: linear-gradient(#DCEDC8 0%, #AED581 100%); " +
-                  "  background-image: -moz-linear-gradient(#DCEDC8 0%, #AED581 100%); " +
-                  "  background-image: -webkit-linear-gradient(#DCEDC8 0%, #AED581 100%); ");
     }
   },
   injectChance: function($doc) {
@@ -1207,20 +1299,8 @@ giveaways = {
       $(fga).children().first().after($chance);
     });
   },
-  highlightCopies: function($doc, hasStyle) {
+  highlightCopies: function($doc) {
     if (!frogVars.moreCopies.value) { return; }
-
-    if (!hasStyle) {
-      var cpyFore = frogVars.moreCopies.sub.settings.moreCopyLabel.value.Foreground || "#F0F2F5",
-          cpyBack = frogVars.moreCopies.sub.settings.moreCopyLabel.value.Background || "#6B7A8C"
-
-      if (!~cpyFore.indexOf("#")) { cpyFore = "#"+cpyFore; }
-      if (!~cpyBack.indexOf("#")) { cpyBack = "#"+cpyBack; }
-
-      GM_addStyle(".copies__tagged{ text-shadow: none; border-radius: 2px; padding: 1px 2px; " +
-                  "  color: "+ cpyFore +"; background-color: "+ cpyBack +"; " +
-                  "  font-weight: "+ (frogVars.moreCopies.sub.settings.moreCopyBold.value? 'bold':'inherit') +"; }");
-    }
 
     $.each($doc.find('.giveaway__heading__thin'), function(i, elm) {
       var $elm = $(elm);
@@ -1286,13 +1366,8 @@ giveaways = {
     var gameName = $(".featured__heading__medium").first().text();
     $(".featured__heading").append($("<a/>").attr('href', '/account/settings/giveaways/filters/search?q=' + gameName).html("<i class='fa fa-eye'></i>"));
   },
-  injectSearch: function($doc, hasStyle) {
+  injectSearch: function($doc) {
     if (!frogVars.searchSame.value || !~location.href.indexOf("/giveaway/")) { return; }
-
-    if (!hasStyle) {
-      GM_addStyle(".sidebar__shortcut-inner-wrap div{ padding: 0; } " +
-                  ".sidebar__shortcut-inner-wrap .sidebar__error{ border-color: #f0d1dc #e5bccc #d9a7ba #ebbecf; }");
-    }
 
     var $side = $(".sidebar__navigation").parent();
     var $entry = $side.children("form").detach();
@@ -1353,26 +1428,8 @@ giveaways = {
       }, 100);
     });
   },
-  gridForm: function($doc, hasStyle) {
+  gridForm: function($doc) {
     if (!frogVars.gridView.value || !helpers.pageSet.GAList()) { return; }
-
-    if (!hasStyle) {
-      GM_addStyle(".pagination{ clear: both; } " +
-                    ".giveaway__row-outer-wrap{ width: 19%; margin-right: 1%; float: left; } " +
-                    ".giveaway__row-inner-wrap{ display: block; } " +
-                    ".giveaway_image_thumbnail,.giveaway_image_thumbnail_missing{ width: initial; margin: 0 auto !important; } " + //important to override margins on :not(last)
-                    ".giveaway__heading{ display: block; text-align: center; } " +
-                    ".giveaway__heading:first-of-type{ height: auto; text-overflow: ellipsis; overflow: hidden; } " +
-                    ".giveaway__columns-full{ display: block; } " +
-                    ".giveaway__columns-full > :not(:last-child){ margin: 0 0 5px 0; } " +
-                    ".giveaway__columns--badges{ margin-bottom: 5px; } " +
-                    ".giveaway__columns--badges > .giveaway__column--contributor-level:not(.giveaway__column--empty){ -webkit-box-flex: 1; -moz-box-flex: 1; -webkit-flex: 1; -ms-flex: 1; flex: 1; } " +
-                    ".giveaway__column--empty{ height: 26px; width: 0; padding: 0; margin: 0 !important; visibility: hidden; } " + //important to force no widths
-                    ".giveaway__links{ display: block; margin-top: 5px; } " +
-                    ".giveaway__links a{ margin-right: 5px; } " +
-                    ".pinned-giveaways__inner-wrap--minimized .giveaway__row-outer-wrap:nth-child(-n+5){ display: initial; } " +
-                    ".giveaway__row--empty{ clear: both; } ");
-    }
 
     $doc.find(".giveaway__columns").addClass("giveaway__columns-full");
     $.each($doc.find(".giveaway__row-outer-wrap"), function(i,wrap) {
@@ -1423,11 +1480,6 @@ giveaways = {
     injectCollapsable: function() {
       //two or less giveaways is already expanded
       if ($(".pinned-giveaways__inner-wrap").children().length < 3) { return; }
-
-      //remove expanded bottom margin for use on our collapse button
-      GM_addStyle(".pinned-giveaways__button{ clear: both; } " +
-                  ".pinned-giveaways__inner-wrap:not(.pinned-giveaways__inner-wrap--minimized){ " +
-                  "  border-radius: 4px 4px 0 0; margin-bottom: 0; }");
 
       //remove their click event in favor of our own
       $(".pinned-giveaways__button").off("click");
@@ -1536,9 +1588,6 @@ threads = {
     },
     injectPageHelpers: function() {
       if (!frogVars.formatting.value || (!~location.href.indexOf("/discussion") && !~location.href.indexOf("/giveaway/"))) { return; }
-
-      GM_addStyle(".button-container{ display: flex; } " +
-                  ".align-button-container-top{ margin-bottom: 5px; }");
 
       $.each($(".comment--submit, .page__description, .form__rows"), function(i, elm) {
         threads.commentBox.injectHelpers($(elm));
@@ -1681,18 +1730,12 @@ threads = {
   }
 },
 users = {
-  profileHover: function($doc, hasStyle) {
-    profiles.hover(true, $doc, hasStyle);
+  profileHover: function($doc) {
+    profiles.hover(true, $doc);
   },
   tagging: {
-    show: function($doc, hasStyle) {
+    show: function($doc) {
       if (!frogVars.customTags.value || ~location.pathname.indexOf('/user/')) { return; }
-
-      if (!hasStyle) {
-        GM_addStyle(".user__tagged{ text-decoration: none; border-radius: 4px; padding: 2px 4px; margin-left: .5em; background-color: rgba(0,0,0,.01); " +
-                    "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } " +
-                    " .comment__username--op .user__tagged{ color: #fff; } ");
-      }
 
       $.each(Object.keys(frogTags.users), function(i, taglet) {
         $doc.find("a[href='/user/"+ taglet +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").after(
@@ -1708,27 +1751,9 @@ users = {
       profiles.editor(isHover, "user", "users", user);
     }
   },
-  listIndication: function($doc, hasStyle) {
+  listIndication: function($doc) {
     if (!frogVars.userLists.value || ~location.pathname.indexOf('/user/')) {
       return; //not active on user pages for obvious reasons
-    }
-
-    if (!hasStyle && frogVars.userLists.sub.settings.userColor.value) {
-      var wlFore = frogVars.userLists.sub.settings.userWhite.value.Foreground || "#2A2",
-          wlBack = frogVars.userLists.sub.settings.userWhite.value.Background || "#FFF",
-          blFore = frogVars.userLists.sub.settings.userBlack.value.Foreground || "#C55",
-          blBack = frogVars.userLists.sub.settings.userBlack.value.Background || "#000";
-
-      if (!~wlFore.indexOf("#")) { wlFore = "#"+wlFore; }
-      if (!~wlBack.indexOf("#")) { wlBack = "#"+wlBack; }
-      if (!~blFore.indexOf("#")) { blFore = "#"+blFore; }
-      if (!~blBack.indexOf("#")) { blBack = "#"+blBack; }
-
-      //using !important selector on 'color' to override the :not(.comment__username--op) selector color
-      GM_addStyle("a.user__whitened{ background-color: "+ wlBack +"; color: "+ wlFore +" !important; border-radius: 4px; padding: 3px 5px; text-shadow: none; } " +
-                  "a.user__blackened{ background-color: "+ blBack +"; color: "+ blFore +" !important; border-radius: 4px; padding: 3px 5px; text-shadow: none; } " +
-                  "a.user__whitened i{ color: "+ wlFore +" } " +
-                  "a.user__blackened i{ color: "+ blFore +" } ");
     }
 
     helpers.listingPit.getList("white", function(whitened) {
@@ -1808,15 +1833,12 @@ users = {
   }
 },
 groups = {
-  profileHover: function($doc, hasStyle) {
-    profiles.hover(false, $doc, true); //hasStyle true, as user hover (joint feature) will provide it
+  profileHover: function($doc) {
+    profiles.hover(false, $doc);
   },
   tagging: {
     show: function() {
       if (!frogVars.customTags.value || ~location.pathname.indexOf('/group/')) { return; }
-
-      GM_addStyle(".group__tagged{ text-decoration: none; border-radius: 4px; padding: 2px 4px; margin-left: .5em; background-color: rgba(0,0,0,.01); " +
-                  "  text-shadow: none; box-shadow: 1px 1px 1px rgba(0,0,0,0.5) inset, -1px -1px 1px rgba(255,255,255,0.5) inset; } ");
 
       $.each(Object.keys(frogTags.groups), function(i, taglet) {
         $document.find("a[href='/group/"+ taglet +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").after(
@@ -1833,27 +1855,8 @@ groups = {
   }
 },
 profiles = {
-  hover: function(isUser, $doc, hasStyle) {
+  hover: function(isUser, $doc) {
     if (!frogVars.hoverInfo.value) { return; }
-
-    var img = 64, pad = 5;
-    var width = 360, height = 160;
-    if (!hasStyle) {
-      GM_addStyle(".hover-panel__outer-wrap{ position: absolute; width: "+ width +"px; height: "+ height +"px; color: #21262f; } " +
-                  ".hover-panel__inner-wrap{ position: relative; width: 100%; height: 100%; } " +
-                  ".hover-panel__image{ position: absolute; top: 0; left: 0; width: "+ img +"px; height: "+ img +"px; " +
-                  "  border-radius: 5px; } " +
-                  ".hover-panel__corner{ position: absolute; top: "+ (img+pad) +"px; bottom: 0; left: 0; right: "+ (width-(img+pad)) +"px; " +
-                  "  padding: 5px; background-color: #465670; border-radius: 3px 0 0 3px; } " +
-                  ".hover-panel__corner .hover-panel__icon-load{ font-size: 5em; color: rgba(255,255,255,0.6); } " +
-                  ".hover-panel__corner .sidebar__shortcut-inner-wrap{ display: block; } " +
-                  ".hover-panel__corner .sidebar__shortcut__whitelist{ margin: 0 0 5px 0; }" +
-                  ".hover-panel__stats{ position: absolute; top: 0; bottom: 0; left: "+ (img+pad) +"px; right: 0; " +
-                  "  padding: 5px; background-color: #465670; border-radius: 3px 3px 3px 0; } " +
-                  ".hover-panel__stats .featured__heading__medium{ font-size: 16px; } " +
-                  ".hover-panel__stats .featured__heading{ margin-bottom: 0; } " +
-                  ".hover-panel__stats .featured__table__column{ margin: 0; } ");
-    }
 
     var $box = frogShared.hoverOuter;
     if ($box == null) {
@@ -1958,8 +1961,8 @@ profiles = {
 
           var $target = $(ev.target);
           var edge = 0;
-          if (($target.offset().left + width) > window.innerWidth) {
-            edge = ev.target.offsetWidth - width;
+          if (($target.offset().left + $box.width()) > window.innerWidth) {
+            edge = ev.target.offsetWidth - $box.width();
           }
 
           $box.show()
@@ -2048,6 +2051,8 @@ pointless = {
 // SETUP //
 (function(){
   try {
+    helpers.style.apply();
+
     settings.injectPage();
     settings.injectMenu();
     settings.invalidateOnSync();
