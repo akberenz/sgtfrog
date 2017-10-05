@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.3
+// @version      1.0.0-alpha.4
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -659,13 +659,16 @@ helpers = {
         sSheet += ".hover-panel__outer-wrap{ position: absolute; width: "+ width +"px; height: "+ height +"px; color: #21262f; } " +
                   ".hover-panel__inner-wrap{ position: relative; width: 100%; height: 100%; } " +
                   ".hover-panel__image{ position: absolute; top: 0; left: 0; width: "+ img +"px; height: "+ img +"px; border-radius: 5px; } " +
+                  ".hover-reversed .hover-panel__image{ left: initial; right: 0; } " +
                   ".hover-panel__corner{ position: absolute; top: "+ (img+pad) +"px; bottom: 0; left: 0; right: "+ (width-(img+pad)) +"px;" +
                   "  padding: 5px; background-color: #465670; border-radius: 3px 0 0 3px; } " +
+                  ".hover-reversed .hover-panel__corner{ left: "+ (width-(img+pad)) +"px; right: 0; border-radius: 0 3px 3px 0; } " +
                   ".hover-panel__corner .hover-panel__icon-load{ font-size: 5em; color: rgba(255,255,255,0.6); } " +
                   ".hover-panel__corner .sidebar__shortcut-inner-wrap{ display: block; } " +
-                  ".hover-panel__corner .sidebar__shortcut__whitelist{ margin: 0 0 5px 0; }" +
+                  ".hover-panel__corner .sidebar__shortcut__whitelist{ margin: 0 0 5px 0; } " +
                   ".hover-panel__stats{ position: absolute; top: 0; bottom: 0; left: "+ (img+pad) +"px; right: 0;" +
                   "  padding: 5px; background-color: #465670; border-radius: 3px 3px 3px 0; } " +
+                  ".hover-reversed .hover-panel__stats{ left: 0; right:"+ (img+pad) +"px; border-radius: 3px 3px 0 3px; } " +
                   ".hover-panel__stats .featured__heading__medium{ font-size: 16px; } " +
                   ".hover-panel__stats .featured__heading{ margin-bottom: 0; } " +
                   ".hover-panel__stats .featured__table__column{ margin: 0; } ";
@@ -1964,10 +1967,13 @@ profiles = {
             users.listenForLists(lastLoad, true); //removed when hidden, so re-add on showing same profile
           }
 
-          var $target = $(ev.target);
-          var edge = 0;
+          //detect if image is on the right side of the window
+          var $target = $(ev.target), edge = 0;
           if (($target.offset().left + $box.width()) > window.innerWidth) {
             edge = ev.target.offsetWidth - $box.width();
+            $hoverbox.addClass("hover-reversed");
+          } else {
+            $hoverbox.removeClass("hover-reversed");
           }
 
           $box.show()
