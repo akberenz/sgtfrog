@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.6
+// @version      1.0.0-alpha.7
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -752,7 +752,7 @@ helpers = {
 
         sSheet += ".copies__tagged{ text-shadow: none; border-radius: 2px; padding: 1px 2px; " +
                   "  color: "+ cpyFore +"; background-color: "+ cpyBack +"; " +
-                  "  font-weight: "+ (frogVars.copyBold? 'bold':'inherit') +"; }";
+                  "  font-weight: "+ (frogVars.lists.moreCopies.sub.moreCopyBold.value? 'bold':'inherit') +"; }";
       }
 
       //user list colors
