@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.5
+// @version      1.0.0-alpha.6
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1997,14 +1997,14 @@ groups = {
   }
 },
 profiles = {
-  box: null,
+  frame: null,
   hover: function(isUser, $doc) {
     if (!frogVars.social.hoverInfo.value) { return; }
 
-    var $box = profiles.box;
+    var $box = profiles.frame;
     if ($box == null) {
       var $box = $("<div/>").addClass("global__image-outer-wrap hover-panel__outer-wrap").appendTo($("body")).hide();
-      profiles.box = $box;
+      profiles.frame = $box;
 
       var $hoverbox = $("<div/>").addClass("hover-panel__inner-wrap").appendTo($box);
       $("<a/>").addClass("hover-panel__link").append($("<div/>").addClass("hover-panel__image")).appendTo($hoverbox);
@@ -2106,9 +2106,9 @@ profiles = {
           var $target = $(ev.target), edge = 0;
           if (($target.offset().left + $box.width()) > window.innerWidth) {
             edge = ev.target.offsetWidth - $box.width();
-            $hoverbox.addClass("hover-reversed");
+            $box.addClass("hover-reversed");
           } else {
-            $hoverbox.removeClass("hover-reversed");
+            $box.removeClass("hover-reversed");
           }
 
           $box.show()
