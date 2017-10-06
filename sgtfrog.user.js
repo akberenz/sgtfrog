@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.4
+// @version      1.0.0-alpha.5
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -27,52 +27,172 @@ if ($(".nav__sits").length) {
 
 // Variables //
 var frogVars = {
-  fixedElms:  { value: GM_getValue("fixedElms",  6), set: { type: "square", opt: ["Header", "Sidebar", "Footer"] }, query: "Set fixed elements:" },
-  loadLists:  { value: GM_getValue("loadLists", 15), set: { type: "square", opt: ["Giveaways", "Discussions", "Comments", "General Content"] }, query: "Continuously load:" },
-  gridView:   { value: GM_getValue("gridView",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show giveaways in a grid view?" },
-  featuredGA: { value: GM_getValue("featuredGA", 2), set: { type: "circle", opt: ["Yes", "Expanded", "No"] }, query: "Show featured giveaways section?" },
-  hideEntry:  { value: GM_getValue("hideEntry",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Hide entered giveaways?" },
-  oneHide:    { value: GM_getValue("oneHide",    0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Skip confirmation when hiding games?" },
-  winPercent: { value: GM_getValue("winPercent", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show giveaway win percentage?" },
-  searchSame: { value: GM_getValue("searchSame", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show buttons to quickly search for similar giveaways?" },
-  realEnd:    { value: GM_getValue("realEnd",    0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show actual end time on giveaway page?" },
-  moreCopies: { value: GM_getValue("moreCopies", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Make multiple copy giveaways stand out?",
-                sub: { name: "Configure", settings: {
-                  moreCopyBold: { value: GM_getValue("moreCopyBold", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Bold text:" },
-                  moreCopyLabel: { value: JSON.parse(GM_getValue("moreCopyLabel", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: 'Enter value as hexadecimal color, leave blank for defaults.' }, query: "Text color:" }
-                } }
-              },
-  newBadges:  { value: GM_getValue("newBadges",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show additional giveaway badges?" },
-  colorBadge: { value: GM_getValue("colorBadge", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Recolor standard giveaway badges?" },
-  allGroup:   { value: GM_getValue("allGroup",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show all groups on giveaway pages?" },
-  searchNav:  { value: GM_getValue("searchNav",  0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show the giveaway search bar in the top navigation?" },
-  pointInvl:  { value: GM_getValue("pointInvl",  0), set: { type: "number", opt: ["Seconds"], about: "Value in seconds, enter 0 to disable." }, query: "Regularly update header values (points, messages, etc.)?" },
-  sideMine:   { value: GM_getValue("sideMine",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Hide 'My Giveaways' in the sidebar? (Still available under nav dropdown)" },
-  activeTalk: { value: GM_getValue("activeTalk", 2), set: { type: "circle", opt: ["Yes", "Sidebar", "No"] }, query: "Show the 'Active Discussions' section?" },
-  collapsed:  { value: GM_getValue("collapsed",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "After first page, collapse original discussion post:" },
-  onDemand:   { value: GM_getValue("onDemand",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Only load attached images on demand?" },
-  tracking:   { value: GM_getValue("tracking",   0), set: { type: "circle", opt: ["Yes", "No"] }, query: "Track read comments and topics on discussions:" },
-  formatting: { value: GM_getValue("formatting", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show quick format buttons on comment box?" },
-  preview:    { value: GM_getValue("preview",    1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Allow preview of posts before submitting?" },
-  userTools:  { value: GM_getValue("userTools",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show SGTools links on user and winner pages?",
-                sub: { name: "Configure", settings: {
-                  toolsOrdering: { value: GM_getValue("toolsOrdering", 1), set: { type: "circle", opt: ["Ascending", "Descending"] }, query: "Result ordering:" }
-                } }
-              },
-  hoverInfo:  { value: GM_getValue("hoverInfo",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Show profile details on avatar hover?" },
-  customTags: { value: GM_getValue("customTags", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Allow tagging of users and groups?" },
-  userLists:  { value: GM_getValue("userLists",  1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Label black-/white- listed users?",
-                sub: { name: "Configure", settings: {
-                  userColor: { value: GM_getValue("userColor", 1), set: { type: "circle", opt: ["Yes", "No"] }, query: "Apply colors to usernames?" },
-                  userWhite: { value: JSON.parse(GM_getValue("userWhite", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }, query: "Whitelisted label colors:" },
-                  userBlack: { value: JSON.parse(GM_getValue("userBlack", '{"Foreground": "", "Background": ""}')), set: { type: "text", opt: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }, query: "Blacklisted label colors:" }
-                } }
-              },
-  debugging:  { value: 0, set: { type: "none", opt: [] }, query: "Debug options",
-                sub: { name: "View", settings: {
-                  dbgConsole: { value: GM_getValue("dbgConsole", 2), set: { type: "circle", opt: ["None", "Basic", "Detailed"] }, query: "Console output level:" }
-                } }
-              }
+    //Site related
+    general: {
+        fixedElms: {
+            key: "fixedElms", value: GM_getValue("fixedElms", 6), query: "Set fixed elements:",
+            set: { type: "square", options: ["Header", "Sidebar", "Footer"] }
+        },
+        loadLists: {
+            key: "loadLists", value: GM_getValue("loadLists", 15), query: "Continuously load:",
+            set: { type: "square", options: ["Giveaways", "Discussions", "Comments", "General Content"] }
+        },
+        searchNav: {
+            key: "searchNav", value: GM_getValue("searchNav", 0), query: "Show the giveaway search bar in the top navigation?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        pointInvl: {
+            key: "pointInvl", value: GM_getValue("pointInvl", 0), query: "Regularly update header values (points, messages, etc.)?",
+            set: { type: "number", options: ["Seconds"], about: "Value in seconds, enter 0 to disable. (Minimum 15 seconds)" }
+        }
+    },
+    //Giveaway lists related
+    lists: { 
+        _name: "Giveaway Listings",
+        gridView: {
+            key: "gridView", value: GM_getValue("gridView", 0), query: "Show giveaways in a grid view?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        featuredGA: {
+            key: "featuredGA", value: GM_getValue("featuredGA", 2), query: "Show featured giveaways section?",
+            set: { type: "circle", options: ["Yes", "Expanded", "No"] }
+        },
+        hideEntry: {
+            key: "hideEntry", value: GM_getValue("hideEntry", 1), query: "Hide entered giveaways?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        oneHide: {
+            key: "oneHide", value: GM_getValue("oneHide", 0), query: "Skip confirmation when hiding games?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        winPercent: {
+            key: "winPercent", value: GM_getValue("winPercent", 1), query: "Show giveaway win percentage?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        moreCopies: {
+            key: "moreCopies", value: GM_getValue("moreCopies", 1), query: "Make multiple copy giveaways stand out?",
+            set: { type: "circle", options: ["Yes", "No"] },
+            sub: {
+                moreCopyBold: {
+                    key: "moreCopyBold", value: GM_getValue("moreCopyBold", 1), query: "Bold text:",
+                    set: { type: "circle", options: ["Yes", "No"] }
+                },
+                moreCopyLabel: {
+                    key: "moreCopyLabel", value: JSON.parse(GM_getValue("moreCopyLabel", '{"Foreground": "", "Background": ""}')), query: "Text color:",
+                    set: { type: "text", options: ["Foreground", "Background"], about: 'Enter value as hexadecimal color, leave blank for defaults.' }
+                }
+            }
+        },
+        newBadges: {
+            key: "newBadges", value: GM_getValue("newBadges", 1), query: "Show additional giveaway badges?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        colorBadge: {
+            key: "colorBadge", value: GM_getValue("colorBadge", 1), query: "Recolor standard giveaway badges?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        sideMine: {
+            key: "sideMine", value: GM_getValue("sideMine", 0), query: "Hide 'My Giveaways' in the sidebar? (Still available under nav dropdown)",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        activeTalk: {
+            key: "activeTalk", value: GM_getValue("activeTalk", 2), query: "Show the 'Active Discussions' section?",
+            set: { type: "circle", options: ["Yes", "Sidebar", "No"] }
+        }
+    },
+    //Giveaway page related
+    detail: {
+        _name: "Giveaway Pages",
+        searchSame: {
+            key: "searchSame", value: GM_getValue("searchSame", 1), query: "Show buttons to quickly search for similar giveaways?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        realEnd: {
+            key: "realEnd", value: GM_getValue("realEnd", 0), query: "Show actual end time on giveaway page?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        allGroup: {
+            key: "allGroup", value: GM_getValue("allGroup", 0), query: "Show all groups on giveaway pages?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        }
+    },
+    //Comment thread related
+    threads: {
+        _name: "Comment Threads",
+        collapsed: {
+            key: "collapsed", value: GM_getValue("collapsed", 1), query: "After first page, collapse original discussion post:",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        onDemand: {
+            key: "onDemand", value: GM_getValue("onDemand", 0), query: "Only load attached images on demand?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        tracking: {
+            key: "tracking", value: GM_getValue("tracking", 0), query: "Track read comments and topics on discussions:",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        formatting: {
+            key: "formatting", value: GM_getValue("formatting", 1), query: "Show quick format buttons on comment box?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        preview: {
+            key: "preview", value: GM_getValue("preview", 1), query: "Allow preview of posts before submitting?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        }
+    },
+    //User and group related
+    social: {
+        _name: "Users and Groups",
+        userTools: {
+            key: "userTools", value: GM_getValue("userTools", 1), query: "Show SGTools links on user and winner pages?",
+            set: { type: "circle", options: ["Yes", "No"] },
+            sub: {
+                toolsOrdering: {
+                    key: "toolsOrdering", value: GM_getValue("toolsOrdering", 1), query: "Result ordering:",
+                    set: { type: "circle", options: ["Ascending", "Descending"] }
+                }
+            }
+        },
+        hoverInfo: {
+            key: "hoverInfo", value: GM_getValue("hoverInfo", 1), query: "Show profile details on avatar hover?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        customTags: {
+            key: "customTags", value: GM_getValue("customTags", 1), query: "Allow tagging of users and groups?",
+            set: { type: "circle", options: ["Yes", "No"] }
+        },
+        userLists: {
+            key: "userLists", value: GM_getValue("userLists", 1), query: "Label black-/white- listed users?",
+            set: { type: "circle", options: ["Yes", "No"] },
+            sub: {
+                userColor: {
+                    key: "userColor", value: GM_getValue("userColor", 1), query: "Apply colors to usernames?",
+                    set: { type: "circle", options: ["Yes", "No"] }
+                },
+                userWhite: {
+                    key: "userWhite", value: JSON.parse(GM_getValue("userWhite", '{"Foreground": "", "Background": ""}')), query: "Whitelisted label colors:",
+                    set: { type: "text", options: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }
+                },
+                userBlack: {
+                    key: "userBlack", value: JSON.parse(GM_getValue("userBlack", '{"Foreground": "", "Background": ""}')), query: "Blacklisted label colors:",
+                    set: { type: "text", options: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }
+                }
+            }
+        }
+    },
+    //Script related
+    script: {
+        _name: "Script",
+        debugging: {
+            key: "debugging", value: null, query: "Debug options", set: { type: "none", options: [] },
+            sub: {
+                dbgConsole: {
+                    key: "dbgConsole", value: GM_getValue("dbgConsole",  2), query: "Console output level:",
+                    set: { type: "circle", options: ["None", "Basic", "Detailed"] }
+                }
+            }
+        }
+    }
 };
 
 var frogTags = {
@@ -83,11 +203,9 @@ var frogTracks = {
   discuss: JSON.parse(GM_getValue("tracks[discuss]", '{}'))
 };
 
-var frogShared = {};
-
 
 // Functions //
-var  dbgLevel = frogVars.debugging.sub.settings.dbgConsole.value,
+var  dbgLevel = frogVars.script.debugging.sub.dbgConsole.value,
 logging = {
   debug: function(message) {
     if (dbgLevel < 1) {
@@ -228,6 +346,13 @@ helpers = {
     return $a;
   },
   settings: {
+    makeHeader: function($content, title) {
+      if (!title) { return; }
+      
+      var $headerText = $("<div/>").addClass("page__heading__breadcrumbs")
+        .html($("<a/>").html(title));
+      $content.append($("<div/>").addClass("page__heading").html($headerText));
+    },
     makeRow: function($form, number, isSub, setting, details) {
       var $field;
       switch(details.set.type) {
@@ -251,22 +376,22 @@ helpers = {
 
       if (details.sub) {
         $field.find(".form__row__indent").children("div").first()
-              .append($("<div/>").addClass("form__checkbox is-selected").append($("<a/>").html(details.sub.name))
-                                 .on("click", function(ev) { $("#sub_"+setting).toggle(); ev.stopImmediatePropagation(); }));
+              .append($("<div/>").addClass("form__checkbox is-selected").append($("<a/>").html("Configure"))
+                                 .on("click", function(ev) { $("#sub_"+ setting).toggle(); ev.stopImmediatePropagation(); }));
 
-        var set = "abcde";
-        var $subform = $("<div/>").attr("id", "sub_"+setting).css("display", "none").appendTo($form);
+        var set = "abcdef";
+        var $subform = $("<div/>").attr("id", "sub_"+ setting).css("display", "none").appendTo($form);
 
-        var subkeys = Object.keys(details.sub.settings);
+        var subkeys = Object.keys(details.sub);
         for(var i=0; i<subkeys.length; i++) {
-          var k = subkeys[i];
-          if (details.sub.settings.hasOwnProperty(k)) {
-            helpers.settings.makeRow($subform, number + set.substring(i,i+1), true, k, details.sub.settings[k]);
+          var keyName = subkeys[i];
+          if (details.sub.hasOwnProperty(keyName)) {
+            helpers.settings.makeRow($subform, number + set.substring(i,i+1), true, keyName, details.sub[keyName]);
           }
         }
       }
     },
-    makeHeading: function(number, name, isSub) {
+    makeLabel: function(number, name, isSub) {
       var $row = $("<div/>").addClass("form__row" + (isSub? " form__row__sub":""));
       $("<div/>").addClass("form__heading")
         .append($("<div/>").addClass("form__heading__number").html(number +"."))
@@ -277,13 +402,13 @@ helpers = {
     makeRadio: function(number, isSub, setting, details) {
       var $input = $("<div/>").append($("<input/>").attr("type", "hidden").attr("name", setting).val(details.value));
 
-      for(var i=0; i<details.set.opt.length; i++) {
-        var val = details.set.opt.length - 1 - i; //reverse index so we can check falsey values
+      for(var i=0; i<details.set.options.length; i++) {
+        var val = details.set.options.length - 1 - i; //reverse index so we can check falsey values
         var $radio = $("<div/>").addClass("form__checkbox").attr("data-checkbox-value", val)
           .append("<i class='form__checkbox__default fa fa-circle-o'></i>")
           .append("<i class='form__checkbox__hover fa fa-circle'></i>")
           .append("<i class='form__checkbox__selected fa fa-check-circle'></i>")
-          .append(details.set.opt[i]);
+          .append(details.set.options[i]);
 
         if (details.value == val) {
           $radio.addClass("is-selected");
@@ -293,18 +418,18 @@ helpers = {
         $input.append($radio);
       }
 
-      return helpers.settings.makeHeading(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($input));
+      return helpers.settings.makeLabel(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($input));
     },
     makeCheck: function(number, isSub, setting, details) {
       var $input = $("<div/>").append($("<input/>").attr("type", "hidden").attr("name", setting).val(details.value));
 
-      for(var i=0; i<details.set.opt.length; i++) {
-        var val = Math.pow(2, details.set.opt.length - 1 - i); //values bitwise OR'd together
+      for(var i=0; i<details.set.options.length; i++) {
+        var val = Math.pow(2, details.set.options.length - 1 - i); //values bitwise OR'd together
         var $check = $("<div/>").addClass("form__checkbox").attr("data-checkbox-value", val)
           .append("<i class='form__checkbox__default fa fa-square-o'></i>")
           .append("<i class='form__checkbox__hover fa fa-square'></i>")
           .append("<i class='form__checkbox__selected fa fa-check-square'></i>")
-          .append(details.set.opt[i])
+          .append(details.set.options[i])
           .on("click", function(ev) {
             var $this = $(this),
                 $in   = $this.siblings("input");
@@ -327,16 +452,16 @@ helpers = {
           $input.append($check);
       }
 
-      return helpers.settings.makeHeading(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($input));
+      return helpers.settings.makeLabel(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($input));
     },
     makeText: function(number, isSub, setting, details) {
       var $indent = $("<div/>").addClass("form__row__indent");
 
-      $.each(details.set.opt, function(i, opt) {
+      $.each(details.set.options, function(i, opt) {
         var val = details.value,
             leg = "";
 
-        if (details.set.opt.length > 1) {
+        if (details.set.options.length > 1) {
           val = details.value[opt];
           leg = "_"+i;
         }
@@ -347,12 +472,10 @@ helpers = {
 
       var $desc = $("<div/>").addClass("form__input-description").html(details.set.about);
 
-      return helpers.settings.makeHeading(number, details.query, isSub).append($indent.append($desc));
+      return helpers.settings.makeLabel(number, details.query, isSub).append($indent.append($desc));
     },
     makeEmpty: function(number, isSub, setting, details) {
-      $.each(details.set.opt, function(i, opt) {});
-
-      return helpers.settings.makeHeading(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($("<div/>")));
+      return helpers.settings.makeLabel(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($("<div/>")));
     }
   },
   applyGradients: function(elm, range) {
@@ -564,7 +687,7 @@ helpers = {
       }
 
       //badges
-      if (frogVars.newBadges.value) {
+      if (frogVars.lists.newBadges.value) {
         sSheet += ".giveaway__column--wish{ background-image: linear-gradient(#FFFACF 0%, #FFF176 100%); " +
                   "  background-image: -moz-linear-gradient(#FFFACF 0%, #FFF176 100%); " +
                   "  background-image: -webkit-linear-gradient(#FFFACF 0%, #FFF176 100%); " +
@@ -578,7 +701,7 @@ helpers = {
                   "  border-color: #FFCCBC #FFAB91 #FF8A65 #FFAB91 !important; color: #BF360C; " +
                   "  box-shadow: none !important; }";
       }
-      if (frogVars.colorBadge.value) {
+      if (frogVars.lists.colorBadge.value) {
         sSheet += ".giveaway__column--invite-only{ background-image: linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
                   "  background-image: -moz-linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
                   "  background-image: -webkit-linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
@@ -600,7 +723,7 @@ helpers = {
       }
 
       //grid
-      if (frogVars.gridView.value) {
+      if (frogVars.lists.gridView.value) {
         sSheet += ".pagination{ clear: both; } " +
                   ".giveaway__row-outer-wrap{ width: 19%; margin-right: 1%; float: left; } " +
                   ".giveaway__row-inner-wrap{ display: block; } " +
@@ -620,24 +743,24 @@ helpers = {
       }
 
       //copy count colors
-      if (frogVars.moreCopies.value) {
-        var cpyFore = frogVars.moreCopies.sub.settings.moreCopyLabel.value.Foreground || "#F0F2F5",
-            cpyBack = frogVars.moreCopies.sub.settings.moreCopyLabel.value.Background || "#6B7A8C"
+      if (frogVars.lists.moreCopies.value) {
+        var cpyFore = frogVars.lists.moreCopies.sub.moreCopyLabel.value.Foreground || "#F0F2F5",
+            cpyBack = frogVars.lists.moreCopies.sub.moreCopyLabel.value.Background || "#6B7A8C"
 
         if (!~cpyFore.indexOf("#")) { cpyFore = "#"+cpyFore; }
         if (!~cpyBack.indexOf("#")) { cpyBack = "#"+cpyBack; }
 
         sSheet += ".copies__tagged{ text-shadow: none; border-radius: 2px; padding: 1px 2px; " +
                   "  color: "+ cpyFore +"; background-color: "+ cpyBack +"; " +
-                  "  font-weight: "+ (frogVars.moreCopies.sub.settings.moreCopyBold.value? 'bold':'inherit') +"; }";
+                  "  font-weight: "+ (frogVars.copyBold? 'bold':'inherit') +"; }";
       }
 
       //user list colors
-      if (frogVars.userLists.value) {
-        var wlFore = frogVars.userLists.sub.settings.userWhite.value.Foreground || "#2A2",
-            wlBack = frogVars.userLists.sub.settings.userWhite.value.Background || "#FFF",
-            blFore = frogVars.userLists.sub.settings.userBlack.value.Foreground || "#C55",
-            blBack = frogVars.userLists.sub.settings.userBlack.value.Background || "#000";
+      if (frogVars.social.userLists.value) {
+        var wlFore = frogVars.social.userLists.sub.userWhite.value.Foreground || "#2A2",
+            wlBack = frogVars.social.userLists.sub.userWhite.value.Background || "#FFF",
+            blFore = frogVars.social.userLists.sub.userBlack.value.Foreground || "#C55",
+            blBack = frogVars.social.userLists.sub.userBlack.value.Background || "#000";
 
         if (!~wlFore.indexOf("#")) { wlFore = "#"+wlFore; }
         if (!~wlBack.indexOf("#")) { wlBack = "#"+wlBack; }
@@ -652,7 +775,7 @@ helpers = {
       }
 
       //profile hover
-      if (frogVars.hoverInfo.value) {
+      if (frogVars.social.hoverInfo.value) {
         var img = 64, pad = 5,
             width = 360, height = 160;
 
@@ -747,8 +870,7 @@ settings = {
         var head = data.substring(data.indexOf("<head>")+6, data.indexOf("</head>"))
           .replace(/<script [\s\S]+?<\/script>/g, ""); //remove problematic scripts
         $("<head/>").appendTo("html").append(head);
-        $("<body/>").appendTo("html")
-          .append(data.substring(data.indexOf("<body>")+6, data.indexOf("</body>")));
+        $("<body/>").appendTo("html").append(data.substring(data.indexOf("<body>")+6, data.indexOf("</body>")));
         $dark.appendTo("html");
 
         //pull latest site js
@@ -761,23 +883,43 @@ settings = {
         $(".sidebar__navigation").find("a[href='" + usePage + "']").parent()
           .removeClass("is-selected").find("i").remove();
         $("title").html("Account - Settings - Ribbit");
+        
+        var $content = $("form").parent();
+        $content.find("form").remove();
 
-        //start building our page
-        var $form = $(".form__rows");
-        $form.empty();
-
-        var keys = Object.keys(frogVars);
-        for(var i=0; i<keys.length; i++) {
-          var k = keys[i];
-          if (frogVars.hasOwnProperty(k)) {
-            helpers.settings.makeRow($form, i+1, false, k, frogVars[k]);
+        for(var section in frogVars) {
+          if (frogVars.hasOwnProperty(section)) {
+            var kSection = frogVars[section];
+            helpers.settings.makeHeader($content, kSection._name);
+            
+            var $form = $("<form/>"),
+                keys = Object.keys(kSection), idx = 1;
+            for(var i=0; i<keys.length; i++) {
+              var keyName = keys[i];
+              if (kSection.hasOwnProperty(keyName) && !~keyName.indexOf("_")) {
+                helpers.settings.makeRow($form, idx++, false, keyName, kSection[keyName]);
+              }
+            }
+            
+            $content.append($form);
           }
         }
 
         $("<div/>").addClass("form__submit-button")
           .html("<i class='fa fa-arrow-circle-right'></i> Save Changes")
-          .on("click", function() { settings.save(frogVars); })
-          .appendTo($form);
+          .on("click", function() {
+            for(var section in frogVars) {
+              if (frogVars.hasOwnProperty(section)) {
+                settings.save(frogVars[section]);
+              }
+            }
+            
+            logging.info("Saved new settings");
+            //reload page to apply settings
+            window.scrollTo(0,0);
+            location.reload();
+          })
+          .appendTo($content);
 
         logging.debug("Creation complete");
 
@@ -794,7 +936,7 @@ settings = {
       });
     }
   },
-  save: function(set, subset) {
+  save: function(section) {
     var setVal = function(name, val) {
       if (val === undefined) { return; }
 
@@ -802,47 +944,40 @@ settings = {
       GM_setValue(name, val);
     };
 
-    var keys = Object.keys(set);
-    for(var i=0; i<keys.length; i++) {
-      var k = keys[i];
-      if (set.hasOwnProperty(k)) {
-        if (set[k].set.type === 'text' && set[k].set.opt.length > 1) {
+    for(var setting in section) {
+      if (section.hasOwnProperty(setting) && !~setting.indexOf("_")) {
+        var ss = section[setting];
+        
+        if (ss.set.type === 'text' && ss.set.options.length > 1) {
           //treat as JSON
           var compose = {};
-          for(var j=0; j<set[k].set.opt.length; j++) {
-            var $subinput = $("input[name='"+ k+"_"+j +"']");
-            compose[set[k].set.opt[j]] = $subinput.val();
+          for(var i=0; i<ss.set.options.length; i++) {
+            var $subinput = $("input[name='"+ ss.key +"_"+ i +"']");
+            compose[ss.set.options[i]] = $subinput.val();
           }
 
-          setVal(k, JSON.stringify(compose));
+          setVal(ss.key, JSON.stringify(compose));
         } else {
-          var $input = $("input[name='"+ k +"']");
+          var $input = $("input[name='"+ ss.key +"']");
           var inputNum = +$input.val();
 
           if (isNaN(inputNum)) {
-            setVal(k, $input.val());
+            setVal(ss.key, $input.val());
           } else {
-            setVal(k, +inputNum);
+            setVal(ss.key, +inputNum);
           }
         }
-
-        if (set[k].sub) {
-          settings.save(set[k].sub.settings, true);
+        
+        if (ss.sub) {
+          settings.save(ss.sub);
         }
       }
-    }
-
-    if (!subset) {
-      logging.info("Saved new settings");
-      //reload page to apply settings
-      window.scrollTo(0,0);
-      location.reload();
     }
   }
 },
 fixedElements = {
   header: function() {
-    if (!(frogVars.fixedElms.value & 4)) { return; }
+    if (!(frogVars.general.fixedElms.value & 4)) { return; }
 
     $("header").addClass("fixed");
 
@@ -854,9 +989,9 @@ fixedElements = {
     }
   },
   sidebar: function() {
-    if (!(frogVars.fixedElms.value & 2)) { return; }
+    if (!(frogVars.general.fixedElms.value & 2)) { return; }
 
-    var offset = frogVars.fixedElms.value&4 ? 64 : 25,
+    var offset = frogVars.general.fixedElms.value&4 ? 64 : 25,
         $sidebar = $(".sidebar"),
         $sidewrap = $("<div/>").addClass("sidebar__outer-wrap"),
         $sidead = $(".sidebar__mpu"); //hide the advertisement on scroll
@@ -873,7 +1008,7 @@ fixedElements = {
           pickup = $(".featured__container").height() + 64,
           footerStart = $(".footer__outer-wrap").offset().top;
 
-      if (((frogVars.fixedElms.value&1) == 0) && (offset + scrollAt + selfHeight) > footerStart) {
+      if (((frogVars.general.fixedElms.value&1) == 0) && (offset + scrollAt + selfHeight) > footerStart) {
         //stop following at footer (unless both are floating)
         $sidebar.children().css({"top": -(offset + scrollAt + selfHeight - footerStart)});
       } else if (scrollAt > (pickup - offset)) {
@@ -891,7 +1026,7 @@ fixedElements = {
       .css("max-width", $sidebar.css("max-width"));
   },
   footer: function() {
-    if (!(frogVars.fixedElms.value & 1)) { return; }
+    if (!(frogVars.general.fixedElms.value & 1)) { return; }
 
     $(".footer__outer-wrap").addClass("fixed");
     $(".page__outer-wrap").addClass("left-below");
@@ -930,7 +1065,7 @@ loading = {
   },
   giveaways: function() {
     //avoid stepping on other loading pages
-    if (!(frogVars.loadLists.value & 8) || !helpers.pageSet.GAList()) { return; }
+    if (!(frogVars.general.loadLists.value & 8) || !helpers.pageSet.GAList()) { return; }
 
     var page = helpers.fromQuery("page");
     if (page == undefined) { page = 1; }
@@ -1006,11 +1141,11 @@ loading = {
     });
   },
   threads: function() {
-    if (!(frogVars.loadLists.value & 4) || !~location.href.indexOf("/discussion/")) { return; }
+    if (!(frogVars.general.loadLists.value & 4) || !~location.href.indexOf("/discussion/")) { return; }
     loading.comments();
   },
   thanks: function() {
-    if (!(frogVars.loadLists.value & 2) || !~location.href.indexOf("/giveaway/")) { return; }
+    if (!(frogVars.general.loadLists.value & 2) || !~location.href.indexOf("/giveaway/")) { return; }
     loading.comments();
   },
   comments: function() {
@@ -1075,7 +1210,7 @@ loading = {
     });
   },
   tables: function() {
-    if (!(frogVars.loadLists.value & 1) || !helpers.pageSet.TableList()) { return; }
+    if (!(frogVars.general.loadLists.value & 1) || !helpers.pageSet.TableList()) { return; }
 
     var page = helpers.fromQuery("page");
     if (page == undefined) { page = 1; }
@@ -1132,11 +1267,11 @@ loading = {
     });
   },
   points: function() {
-    if (frogVars.pointInvl.value < 1 || isNaN(frogVars.pointInvl.value)) { return; }
-    if (frogVars.pointInvl.value < 15) {
+    if (frogVars.general.pointInvl.value < 1 || isNaN(frogVars.general.pointInvl.value)) { return; }
+    if (frogVars.general.pointInvl.value < 15) {
       //minimum 15 sec interval is to protect yourself from too many frequent requests
       logging.alert("Failed to apply defined points interval, using 15 seconds instead");
-      frogVars.pointInvl.value = 15;
+      frogVars.general.pointInvl.value = 15;
     }
 
     window.setInterval(function() {
@@ -1162,10 +1297,10 @@ loading = {
           }
         });
       });
-    }, frogVars.pointInvl.value * 1000);
+    }, frogVars.general.pointInvl.value * 1000);
   },
   imgDemand: function($doc) {
-    if (!frogVars.onDemand.value) { return; }
+    if (!frogVars.threads.onDemand.value) { return; }
 
     $.each($doc.find(".comment__description, .page__description").find("img"), function(i, img) {
       var $this = $(this);
@@ -1179,7 +1314,7 @@ loading = {
 },
 sidebar = {
   removeMyGA: function() {
-    if (!frogVars.sideMine.value) { return; }
+    if (!frogVars.lists.sideMine.value) { return; }
 
     $.each($(".sidebar__heading"), function(i, heading) {
       var $heading = $(heading);
@@ -1191,10 +1326,10 @@ sidebar = {
     });
   },
   injectSGTools: function() {
-    if (!frogVars.userTools.value || !~location.pathname.indexOf("/user/")) { return; }
+    if (!frogVars.social.userTools.value || !~location.pathname.indexOf("/user/")) { return; }
 
     var userViewed = location.href.split("/")[4],
-        ordering = frogVars.userTools.sub.settings.toolsOrdering.value? "/oldestfirst":"/newestfirst";
+        ordering = frogVars.social.userTools.sub.toolsOrdering.value? "/oldestfirst":"/newestfirst";
     logging.debug("Found user: " + userViewed);
 
     var $sideentry = $(".sidebar__navigation").last(),
@@ -1212,7 +1347,7 @@ sidebar = {
 giveaways = {
   injectFlags: {
     all: function($doc) {
-      if (frogVars.newBadges.value) {
+      if (frogVars.lists.newBadges.value) {
         giveaways.injectFlags.wishlist($doc);
         giveaways.injectFlags.recent($doc);
       }
@@ -1259,7 +1394,7 @@ giveaways = {
     }
   },
   injectChance: function($doc) {
-    if (!frogVars.winPercent.value) { return; }
+    if (!frogVars.lists.winPercent.value) { return; }
 
     var chtml = function(entries, copies) {
       return "<i class='fa fa-bar-chart'></i> <span>" +
@@ -1308,7 +1443,7 @@ giveaways = {
     });
   },
   highlightCopies: function($doc) {
-    if (!frogVars.moreCopies.value) { return; }
+    if (!frogVars.lists.moreCopies.value) { return; }
 
     $.each($doc.find('.giveaway__heading__thin'), function(i, elm) {
       var $elm = $(elm);
@@ -1319,13 +1454,13 @@ giveaways = {
     });
   },
   injectEndDate: function() {
-    if (!frogVars.realEnd.value || !~location.href.indexOf("/giveaway/")) { return; }
+    if (!frogVars.detail.realEnd.value || !~location.href.indexOf("/giveaway/")) { return; }
 
     var $clock = $(".featured__summary").find("span[data-timestamp]").first();
     $clock.parent().append($("<em/>").html(" ("+ helpers.time.sgString(+$clock.attr("data-timestamp")) +")"));
   },
   expandedGroups: function() {
-    if (!frogVars.allGroup.value || !~location.href.indexOf("/giveaway/")) { return; }
+    if (!frogVars.detail.allGroup.value || !~location.href.indexOf("/giveaway/")) { return; }
 
     //remove group indicator if present, quit if not
     var $group = $(".featured__column--group").detach();
@@ -1361,7 +1496,6 @@ giveaways = {
     if (!force && $(".featured__giveaway__hide").length > 0) {
       //immediately apply when hiding from page
       $(".js__submit-hide-games").on('click', function() {
-        console.log("Activating hide status");
         giveaways.continueHiding(true);
       });
 
@@ -1375,7 +1509,7 @@ giveaways = {
     $(".featured__heading").append($("<a/>").attr('href', '/account/settings/giveaways/filters/search?q=' + gameName).html("<i class='fa fa-eye'></i>"));
   },
   injectSearch: function($doc) {
-    if (!frogVars.searchSame.value || !~location.href.indexOf("/giveaway/")) { return; }
+    if (!frogVars.detail.searchSame.value || !~location.href.indexOf("/giveaway/")) { return; }
 
     var $side = $(".sidebar__navigation").parent();
     var $entry = $side.children("form").detach();
@@ -1394,7 +1528,7 @@ giveaways = {
       .appendTo($("<div/>").addClass("sidebar__shortcut-outer-wrap").prependTo($side))
   },
   injectNavSearch: function() {
-    if (!frogVars.searchNav.value) { return; }
+    if (!frogVars.general.searchNav.value) { return; }
 
     var $search = $("<div/>").addClass("sidebar__search-container").css("margin", "0 5px 0 0").css("height", "inherit")
       .append($("<input class='sidebar__search__ga-input' placeholder='Search Giveaways...' value='' type='text' />")
@@ -1409,7 +1543,7 @@ giveaways = {
     $(".nav__left-container").prepend($search);
   },
   injectWinnerTools: function() {
-    if (!frogVars.userTools.value || !~location.pathname.indexOf("/winners")) { return; } //controlled by SGTools sidepanel option
+    if (!frogVars.social.userTools.value || !~location.pathname.indexOf("/winners")) { return; } //controlled by SGTools sidepanel option
     if ($(".featured__column [href='"+ $(".nav__avatar-outer-wrap").attr("href")+"']").length == 0) { return; } //only inject on your own winner pages
 
     $.each($(".table__row-outer-wrap"), function(i, row) {
@@ -1424,11 +1558,11 @@ giveaways = {
     });
   },
   hideEntered: function($doc) {
-    if (!frogVars.hideEntry.value || ~location.href.indexOf("/user/") || ~location.href.indexOf("/group/")) { return; } //exclude hiding anything on user or group pages
+    if (!frogVars.lists.hideEntry.value || ~location.href.indexOf("/user/") || ~location.href.indexOf("/group/")) { return; } //exclude hiding anything on user or group pages
     $doc.find(".is-faded").parent(".giveaway__row-outer-wrap").remove();
   },
   easyHide: function($doc) {
-    if (!frogVars.oneHide.value) { return; }
+    if (!frogVars.lists.oneHide.value) { return; }
 
     $doc.find("[data-popup='popup--hide-games']").on("click", function(ev) {
       window.setTimeout(function() {
@@ -1437,7 +1571,7 @@ giveaways = {
     });
   },
   gridForm: function($doc) {
-    if (!frogVars.gridView.value || !helpers.pageSet.GAList()) { return; }
+    if (!frogVars.lists.gridView.value || !helpers.pageSet.GAList()) { return; }
 
     $doc.find(".giveaway__columns").addClass("giveaway__columns-full");
     $.each($doc.find(".giveaway__row-outer-wrap"), function(i,wrap) {
@@ -1478,7 +1612,7 @@ giveaways = {
   },
   bulkFeatured: {
     find: function() {
-      switch(frogVars.featuredGA.value) {
+      switch(frogVars.lists.featuredGA.value) {
         case 0: giveaways.bulkFeatured.hidden(); break;
         case 1: giveaways.bulkFeatured.expanded(); break;
         default: giveaways.bulkFeatured.injectCollapsable(); break;
@@ -1521,7 +1655,7 @@ giveaways = {
   },
   activeThreads: {
     find: function() {
-      switch(frogVars.activeTalk.value) {
+      switch(frogVars.lists.activeTalk.value) {
         case 0: giveaways.activeThreads.hidden(); break;
         case 1: giveaways.activeThreads.sidebar(); break;
         default: giveaways.activeThreads.shown(); break;
@@ -1529,7 +1663,7 @@ giveaways = {
     },
     shown: function() {
       //special handling if grid view
-      if (frogVars.gridView.value) {
+      if (frogVars.lists.gridView.value) {
         $(".widget-container.widget-container--margin-top").siblings().addBack().css('clear', 'both');
       }
     },
@@ -1595,7 +1729,7 @@ threads = {
       $commenter.find("textarea").before($row);
     },
     injectPageHelpers: function() {
-      if (!frogVars.formatting.value || (!~location.href.indexOf("/discussion") && !~location.href.indexOf("/giveaway/"))) { return; }
+      if (!frogVars.threads.formatting.value || (!~location.href.indexOf("/discussion") && !~location.href.indexOf("/giveaway/"))) { return; }
 
       $.each($(".comment--submit, .page__description, .form__rows"), function(i, elm) {
         threads.commentBox.injectHelpers($(elm));
@@ -1643,7 +1777,7 @@ threads = {
       });
     },
     injectPagePreview: function() {
-      if (!frogVars.preview.value || (!~location.href.indexOf("/discussion") && !~location.href.indexOf("/giveaway/"))) { return; }
+      if (!frogVars.threads.preview.value || (!~location.href.indexOf("/discussion") && !~location.href.indexOf("/giveaway/"))) { return; }
 
       $.each($(".comment--submit, .page__description, .form__rows"), function(i, elm) {
         threads.commentBox.injectPreview($(elm));
@@ -1657,10 +1791,10 @@ threads = {
           var $this = $(this),
               $editor = $this.parent().siblings(".comment__edit-state");
 
-          if (frogVars.formatting.value) {
+          if (frogVars.threads.formatting.value) {
             threads.commentBox.injectHelpers($editor);
           }
-          if (frogVars.preview.value) {
+          if (frogVars.threads.preview.value) {
             threads.commentBox.injectPreview($editor);
           }
 
@@ -1671,7 +1805,7 @@ threads = {
   },
   //NOTE: needs delayed from page load
   collapseDiscussion: function() {
-    if (!frogVars.collapsed.value || !~location.href.indexOf("/discussion/")) { return; }
+    if (!frogVars.threads.collapsed.value || !~location.href.indexOf("/discussion/")) { return; }
 
     var page = helpers.fromQuery("page");
     if (page && page > 1) {
@@ -1691,8 +1825,8 @@ threads = {
   },
   tracking: {
     all: function($doc) {
-      if (frogVars.tracking.value && ~location.pathname.indexOf("/discussions")) { threads.tracking.lists("discuss"); }
-      if (frogVars.tracking.value && ~location.pathname.indexOf("/discussion/")) { threads.tracking.posts("discuss", $doc); }
+      if (frogVars.threads.tracking.value && ~location.pathname.indexOf("/discussions")) { threads.tracking.lists("discuss"); }
+      if (frogVars.threads.tracking.value && ~location.pathname.indexOf("/discussion/")) { threads.tracking.posts("discuss", $doc); }
     },
     lists: function(set) {
       var $rows = $(".table__row-outer-wrap");
@@ -1743,7 +1877,7 @@ users = {
   },
   tagging: {
     show: function($doc) {
-      if (!frogVars.customTags.value || ~location.pathname.indexOf('/user/')) { return; }
+      if (!frogVars.social.customTags.value || ~location.pathname.indexOf('/user/')) { return; }
 
       $.each(Object.keys(frogTags.users), function(i, taglet) {
         $doc.find("a[href='/user/"+ taglet +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").after(
@@ -1752,7 +1886,7 @@ users = {
       });
     },
     injectEditor: function(user, isHover) {
-      if (!frogVars.customTags.value || (!~location.pathname.indexOf('/user/') && !isHover)) { return; }
+      if (!frogVars.social.customTags.value || (!~location.pathname.indexOf('/user/') && !isHover)) { return; }
       if (~user.indexOf("/user/")) { user = user.substring(6); }
       if (user == $(".nav__avatar-outer-wrap").attr("href").substring(6)) { return; } //don't tag self
 
@@ -1760,7 +1894,7 @@ users = {
     }
   },
   listIndication: function($doc) {
-    if (!frogVars.userLists.value || ~location.pathname.indexOf('/user/')) {
+    if (!frogVars.social.userLists.value || ~location.pathname.indexOf('/user/')) {
       return; //not active on user pages for obvious reasons
     }
 
@@ -1783,7 +1917,7 @@ users = {
     });
   },
   injectListRefresh: function() {
-    if (!frogVars.userLists.value || !~location.pathname.indexOf('/manage/')) { return; }
+    if (!frogVars.social.userLists.value || !~location.pathname.indexOf('/manage/')) { return; }
 
     var type = location.pathname.substring(location.pathname.lastIndexOf('/')+1, location.pathname.indexOf('list'));
 
@@ -1846,7 +1980,7 @@ groups = {
   },
   tagging: {
     show: function() {
-      if (!frogVars.customTags.value || ~location.pathname.indexOf('/group/')) { return; }
+      if (!frogVars.social.customTags.value || ~location.pathname.indexOf('/group/')) { return; }
 
       $.each(Object.keys(frogTags.groups), function(i, taglet) {
         $document.find("a[href='/group/"+ taglet +"']").not(".global__image-outer-wrap,[class$='_image_avatar']").after(
@@ -1855,7 +1989,7 @@ groups = {
       });
     },
     injectEditor: function(group, isHover) {
-      if (!frogVars.customTags.value || (!~location.pathname.indexOf('/group/') && !isHover)) { return; }
+      if (!frogVars.social.customTags.value || (!~location.pathname.indexOf('/group/') && !isHover)) { return; }
       if (~group.indexOf("/group/")) { group = group.substring(6); }
 
       profiles.editor(isHover, "group", "groups", group);
@@ -1863,13 +1997,14 @@ groups = {
   }
 },
 profiles = {
+  box: null,
   hover: function(isUser, $doc) {
-    if (!frogVars.hoverInfo.value) { return; }
+    if (!frogVars.social.hoverInfo.value) { return; }
 
-    var $box = frogShared.hoverOuter;
+    var $box = profiles.box;
     if ($box == null) {
       var $box = $("<div/>").addClass("global__image-outer-wrap hover-panel__outer-wrap").appendTo($("body")).hide();
-      frogShared.hoverOuter = $box;
+      profiles.box = $box;
 
       var $hoverbox = $("<div/>").addClass("hover-panel__inner-wrap").appendTo($box);
       $("<a/>").addClass("hover-panel__link").append($("<div/>").addClass("hover-panel__image")).appendTo($hoverbox);
