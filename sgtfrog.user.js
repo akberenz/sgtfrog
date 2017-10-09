@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.7
+// @version      1.0.0-alpha.8
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -27,172 +27,172 @@ if ($(".nav__sits").length) {
 
 // Variables //
 var frogVars = {
-    //Site related
-    general: {
-        fixedElms: {
-            key: "fixedElms", value: GM_getValue("fixedElms", 6), query: "Set fixed elements:",
-            set: { type: "square", options: ["Header", "Sidebar", "Footer"] }
-        },
-        loadLists: {
-            key: "loadLists", value: GM_getValue("loadLists", 15), query: "Continuously load:",
-            set: { type: "square", options: ["Giveaways", "Discussions", "Comments", "General Content"] }
-        },
-        searchNav: {
-            key: "searchNav", value: GM_getValue("searchNav", 0), query: "Show the giveaway search bar in the top navigation?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        pointInvl: {
-            key: "pointInvl", value: GM_getValue("pointInvl", 0), query: "Regularly update header values (points, messages, etc.)?",
-            set: { type: "number", options: ["Seconds"], about: "Value in seconds, enter 0 to disable. (Minimum 15 seconds)" }
-        }
+  //Site related
+  general: {
+    fixedElms: {
+      key: "fixedElms", value: GM_getValue("fixedElms", 6), query: "Set fixed elements:",
+      set: { type: "square", options: ["Header", "Sidebar", "Footer"] }
     },
-    //Giveaway lists related
-    lists: { 
-        _name: "Giveaway Listings",
-        gridView: {
-            key: "gridView", value: GM_getValue("gridView", 0), query: "Show giveaways in a grid view?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        featuredGA: {
-            key: "featuredGA", value: GM_getValue("featuredGA", 2), query: "Show featured giveaways section?",
-            set: { type: "circle", options: ["Yes", "Expanded", "No"] }
-        },
-        hideEntry: {
-            key: "hideEntry", value: GM_getValue("hideEntry", 1), query: "Hide entered giveaways?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        oneHide: {
-            key: "oneHide", value: GM_getValue("oneHide", 0), query: "Skip confirmation when hiding games?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        winPercent: {
-            key: "winPercent", value: GM_getValue("winPercent", 1), query: "Show giveaway win percentage?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        moreCopies: {
-            key: "moreCopies", value: GM_getValue("moreCopies", 1), query: "Make multiple copy giveaways stand out?",
-            set: { type: "circle", options: ["Yes", "No"] },
-            sub: {
-                moreCopyBold: {
-                    key: "moreCopyBold", value: GM_getValue("moreCopyBold", 1), query: "Bold text:",
-                    set: { type: "circle", options: ["Yes", "No"] }
-                },
-                moreCopyLabel: {
-                    key: "moreCopyLabel", value: JSON.parse(GM_getValue("moreCopyLabel", '{"Foreground": "", "Background": ""}')), query: "Text color:",
-                    set: { type: "text", options: ["Foreground", "Background"], about: 'Enter value as hexadecimal color, leave blank for defaults.' }
-                }
-            }
-        },
-        newBadges: {
-            key: "newBadges", value: GM_getValue("newBadges", 1), query: "Show additional giveaway badges?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        colorBadge: {
-            key: "colorBadge", value: GM_getValue("colorBadge", 1), query: "Recolor standard giveaway badges?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        sideMine: {
-            key: "sideMine", value: GM_getValue("sideMine", 0), query: "Hide 'My Giveaways' in the sidebar? (Still available under nav dropdown)",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        activeTalk: {
-            key: "activeTalk", value: GM_getValue("activeTalk", 2), query: "Show the 'Active Discussions' section?",
-            set: { type: "circle", options: ["Yes", "Sidebar", "No"] }
-        }
+    loadLists: {
+      key: "loadLists", value: GM_getValue("loadLists", 15), query: "Continuously load:",
+      set: { type: "square", options: ["Giveaways", "Discussions", "Comments", "General Content"] }
     },
-    //Giveaway page related
-    detail: {
-        _name: "Giveaway Pages",
-        searchSame: {
-            key: "searchSame", value: GM_getValue("searchSame", 1), query: "Show buttons to quickly search for similar giveaways?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        realEnd: {
-            key: "realEnd", value: GM_getValue("realEnd", 0), query: "Show actual end time on giveaway page?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        allGroup: {
-            key: "allGroup", value: GM_getValue("allGroup", 0), query: "Show all groups on giveaway pages?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        }
+    searchNav: {
+      key: "searchNav", value: GM_getValue("searchNav", 0), query: "Show the giveaway search bar in the top navigation?",
+      set: { type: "circle", options: ["Yes", "No"] }
     },
-    //Comment thread related
-    threads: {
-        _name: "Comment Threads",
-        collapsed: {
-            key: "collapsed", value: GM_getValue("collapsed", 1), query: "After first page, collapse original discussion post:",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        onDemand: {
-            key: "onDemand", value: GM_getValue("onDemand", 0), query: "Only load attached images on demand?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        tracking: {
-            key: "tracking", value: GM_getValue("tracking", 0), query: "Track read comments and topics on discussions:",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        formatting: {
-            key: "formatting", value: GM_getValue("formatting", 1), query: "Show quick format buttons on comment box?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        preview: {
-            key: "preview", value: GM_getValue("preview", 1), query: "Allow preview of posts before submitting?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        }
-    },
-    //User and group related
-    social: {
-        _name: "Users and Groups",
-        userTools: {
-            key: "userTools", value: GM_getValue("userTools", 1), query: "Show SGTools links on user and winner pages?",
-            set: { type: "circle", options: ["Yes", "No"] },
-            sub: {
-                toolsOrdering: {
-                    key: "toolsOrdering", value: GM_getValue("toolsOrdering", 1), query: "Result ordering:",
-                    set: { type: "circle", options: ["Ascending", "Descending"] }
-                }
-            }
-        },
-        hoverInfo: {
-            key: "hoverInfo", value: GM_getValue("hoverInfo", 1), query: "Show profile details on avatar hover?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        customTags: {
-            key: "customTags", value: GM_getValue("customTags", 1), query: "Allow tagging of users and groups?",
-            set: { type: "circle", options: ["Yes", "No"] }
-        },
-        userLists: {
-            key: "userLists", value: GM_getValue("userLists", 1), query: "Label black-/white- listed users?",
-            set: { type: "circle", options: ["Yes", "No"] },
-            sub: {
-                userColor: {
-                    key: "userColor", value: GM_getValue("userColor", 1), query: "Apply colors to usernames?",
-                    set: { type: "circle", options: ["Yes", "No"] }
-                },
-                userWhite: {
-                    key: "userWhite", value: JSON.parse(GM_getValue("userWhite", '{"Foreground": "", "Background": ""}')), query: "Whitelisted label colors:",
-                    set: { type: "text", options: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }
-                },
-                userBlack: {
-                    key: "userBlack", value: JSON.parse(GM_getValue("userBlack", '{"Foreground": "", "Background": ""}')), query: "Blacklisted label colors:",
-                    set: { type: "text", options: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }
-                }
-            }
-        }
-    },
-    //Script related
-    script: {
-        _name: "Script",
-        debugging: {
-            key: "debugging", value: null, query: "Debug options", set: { type: "none", options: [] },
-            sub: {
-                dbgConsole: {
-                    key: "dbgConsole", value: GM_getValue("dbgConsole",  2), query: "Console output level:",
-                    set: { type: "circle", options: ["None", "Basic", "Detailed"] }
-                }
-            }
-        }
+    pointInvl: {
+      key: "pointInvl", value: GM_getValue("pointInvl", 0), query: "Regularly update header values (points, messages, etc.)?",
+      set: { type: "number", options: ["Seconds"], about: "Value in seconds, enter 0 to disable. (Minimum 15 seconds)" }
     }
+  },
+  //Giveaway lists related
+  lists: {
+    _name: "Giveaway Listings",
+    gridView: {
+      key: "gridView", value: GM_getValue("gridView", 0), query: "Show giveaways in a grid view?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    featuredGA: {
+      key: "featuredGA", value: GM_getValue("featuredGA", 2), query: "Show featured giveaways section?",
+      set: { type: "circle", options: ["Yes", "Expanded", "No"] }
+    },
+    hideEntry: {
+      key: "hideEntry", value: GM_getValue("hideEntry", 1), query: "Hide entered giveaways?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    oneHide: {
+      key: "oneHide", value: GM_getValue("oneHide", 0), query: "Skip confirmation when hiding games?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    winPercent: {
+      key: "winPercent", value: GM_getValue("winPercent", 1), query: "Show giveaway win percentage?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    moreCopies: {
+      key: "moreCopies", value: GM_getValue("moreCopies", 1), query: "Make multiple copy giveaways stand out?",
+      set: { type: "circle", options: ["Yes", "No"] },
+      sub: {
+        moreCopyBold: {
+          key: "moreCopyBold", value: GM_getValue("moreCopyBold", 1), query: "Bold text:",
+          set: { type: "circle", options: ["Yes", "No"] }
+        },
+        moreCopyLabel: {
+          key: "moreCopyLabel", value: JSON.parse(GM_getValue("moreCopyLabel", '{"Foreground": "", "Background": ""}')), query: "Text color:",
+          set: { type: "text", options: ["Foreground", "Background"], about: 'Enter value as hexadecimal color, leave blank for defaults.' }
+        }
+      }
+    },
+    newBadges: {
+      key: "newBadges", value: GM_getValue("newBadges", 1), query: "Show additional giveaway badges?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    colorBadge: {
+      key: "colorBadge", value: GM_getValue("colorBadge", 1), query: "Recolor standard giveaway badges?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    sideMine: {
+      key: "sideMine", value: GM_getValue("sideMine", 0), query: "Hide 'My Giveaways' in the sidebar? (Still available under nav dropdown)",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    activeTalk: {
+      key: "activeTalk", value: GM_getValue("activeTalk", 2), query: "Show the 'Active Discussions' section?",
+      set: { type: "circle", options: ["Yes", "Sidebar", "No"] }
+    }
+  },
+  //Giveaway page related
+  detail: {
+    _name: "Giveaway Pages",
+    searchSame: {
+      key: "searchSame", value: GM_getValue("searchSame", 1), query: "Show buttons to quickly search for similar giveaways?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    realEnd: {
+      key: "realEnd", value: GM_getValue("realEnd", 0), query: "Show actual end time on giveaway page?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    allGroup: {
+      key: "allGroup", value: GM_getValue("allGroup", 0), query: "Show all groups on giveaway pages?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    }
+  },
+  //Comment thread related
+  threads: {
+    _name: "Comment Threads",
+    collapsed: {
+      key: "collapsed", value: GM_getValue("collapsed", 1), query: "After first page, collapse original discussion post:",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    onDemand: {
+      key: "onDemand", value: GM_getValue("onDemand", 0), query: "Only load attached images on demand?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    tracking: {
+      key: "tracking", value: GM_getValue("tracking", 0), query: "Track read comments and topics on discussions:",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    formatting: {
+      key: "formatting", value: GM_getValue("formatting", 1), query: "Show quick format buttons on comment box?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    preview: {
+      key: "preview", value: GM_getValue("preview", 1), query: "Allow preview of posts before submitting?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    }
+  },
+  //User and group related
+  social: {
+    _name: "Users and Groups",
+    hoverInfo: {
+      key: "hoverInfo", value: GM_getValue("hoverInfo", 1), query: "Show profile details on avatar hover?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    customTags: {
+      key: "customTags", value: GM_getValue("customTags", 1), query: "Allow tagging of users and groups?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    userLists: {
+      key: "userLists", value: GM_getValue("userLists", 1), query: "Label black-/white- listed users?",
+      set: { type: "circle", options: ["Yes", "No"] },
+      sub: {
+        userColor: {
+          key: "userColor", value: GM_getValue("userColor", 1), query: "Apply colors to usernames?",
+          set: { type: "circle", options: ["Yes", "No"] }
+        },
+        userWhite: {
+          key: "userWhite", value: JSON.parse(GM_getValue("userWhite", '{"Foreground": "", "Background": ""}')), query: "Whitelisted label colors:",
+          set: { type: "text", options: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }
+        },
+        userBlack: {
+          key: "userBlack", value: JSON.parse(GM_getValue("userBlack", '{"Foreground": "", "Background": ""}')), query: "Blacklisted label colors:",
+          set: { type: "text", options: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }
+        }
+      }
+    },
+    userTools: {
+      key: "userTools", value: GM_getValue("userTools", 1), query: "Show SGTools links on user and winner pages?",
+      set: { type: "circle", options: ["Yes", "No"] },
+      sub: {
+        toolsOrdering: {
+          key: "toolsOrdering", value: GM_getValue("toolsOrdering", 1), query: "Result ordering:",
+          set: { type: "circle", options: ["Ascending", "Descending"] }
+        }
+      }
+    }
+  },
+  //Script related
+  script: {
+    _name: "Script",
+    debugging: {
+      key: "debugging", value: null, query: "Debug options", set: { type: "none", options: [] },
+      sub: {
+        dbgConsole: {
+          key: "dbgConsole", value: GM_getValue("dbgConsole",  2), query: "Console output level:",
+          set: { type: "circle", options: ["None", "Basic", "Detailed"] }
+        }
+      }
+    }
+  }
 };
 
 var frogTags = {
@@ -348,7 +348,7 @@ helpers = {
   settings: {
     makeHeader: function($content, title) {
       if (!title) { return; }
-      
+
       var $headerText = $("<div/>").addClass("page__heading__breadcrumbs")
         .html($("<a/>").html(title));
       $content.append($("<div/>").addClass("page__heading").html($headerText));
@@ -797,7 +797,7 @@ helpers = {
                   ".hover-panel__stats .featured__table__column{ margin: 0; } ";
       }
 
-      
+
       /* Application */
       GM_addStyle(sSheet);
     }
@@ -824,7 +824,7 @@ settings = {
       $(".nav__button-container.is-selected").removeClass("is-selected");
       $menu.addClass("is-selected");
     }
-    
+
     $("<a/>").addClass("nav__button nav__button--is-dropdown").attr("href", "/accoumt/settings/ribbit")
       .html("SGT frog").appendTo($menu);
     $("<div/>").addClass("nav__button nav__button--is-dropdown-arrow").html("<i class='fa fa-angle-down'></i>").appendTo($menu)
@@ -883,7 +883,7 @@ settings = {
         $(".sidebar__navigation").find("a[href='" + usePage + "']").parent()
           .removeClass("is-selected").find("i").remove();
         $("title").html("Account - Settings - Ribbit");
-        
+
         var $content = $("form").parent();
         $content.find("form").remove();
 
@@ -891,7 +891,7 @@ settings = {
           if (frogVars.hasOwnProperty(section)) {
             var kSection = frogVars[section];
             helpers.settings.makeHeader($content, kSection._name);
-            
+
             var $form = $("<form/>"),
                 keys = Object.keys(kSection), idx = 1;
             for(var i=0; i<keys.length; i++) {
@@ -900,7 +900,7 @@ settings = {
                 helpers.settings.makeRow($form, idx++, false, keyName, kSection[keyName]);
               }
             }
-            
+
             $content.append($form);
           }
         }
@@ -913,7 +913,7 @@ settings = {
                 settings.save(frogVars[section]);
               }
             }
-            
+
             logging.info("Saved new settings");
             //reload page to apply settings
             window.scrollTo(0,0);
@@ -947,7 +947,7 @@ settings = {
     for(var setting in section) {
       if (section.hasOwnProperty(setting) && !~setting.indexOf("_")) {
         var ss = section[setting];
-        
+
         if (ss.set.type === 'text' && ss.set.options.length > 1) {
           //treat as JSON
           var compose = {};
@@ -967,7 +967,7 @@ settings = {
             setVal(ss.key, +inputNum);
           }
         }
-        
+
         if (ss.sub) {
           settings.save(ss.sub);
         }
