@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.11
+// @version      1.0.0-alpha.12
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -97,7 +97,13 @@ var frogVars = {
     },
     activeTalk: {
       key: "activeTalk", value: GM_getValue("activeTalk", 2), query: "Show the 'Active Discussions' section?",
-      set: { type: "circle", options: ["Yes", "Sidebar", "No"] }
+      set: { type: "circle", options: ["Yes", "Sidebar", "No"] },
+      sub: {
+        activeTalkSide: {
+          key: "activeTalkSide", value: GM_getValue("activeTalkSide", 2), query: "Sections shown in sidebar:",
+          set: { type: "square", options: ["Discussions", "Deals"], about: "Only applies if 'Sidebar' option is selected" }
+        }
+      }
     }
   },
   //Giveaway page related
@@ -379,7 +385,7 @@ helpers = {
       $form.append($field);
 
       if (details.sub) {
-        $field.find(".form__row__indent").children("div").first()
+        $field.find(".form__row__indent").children("div").last()
               .append($("<div/>").addClass("form__checkbox is-selected").append($("<a/>").html("Configure"))
                                  .on("click", function(ev) { $("#sub_"+ setting).toggle(); ev.stopImmediatePropagation(); }));
 
@@ -422,7 +428,8 @@ helpers = {
         $input.append($radio);
       }
 
-      return helpers.settings.makeLabel(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($input));
+      var $desc = details.set.about? $("<div/>").addClass("form__input-description").css('margin', '0 0 10px 0').html(details.set.about) : null;
+      return helpers.settings.makeLabel(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").prepend($desc).append($input));
     },
     makeCheck: function(number, isSub, setting, details) {
       var $input = $("<div/>").append($("<input/>").attr("type", "hidden").attr("name", setting).val(details.value));
@@ -456,7 +463,8 @@ helpers = {
           $input.append($check);
       }
 
-      return helpers.settings.makeLabel(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($input));
+      var $desc = details.set.about? $("<div/>").addClass("form__input-description").css('margin', '0 0 10px 0').html(details.set.about) : null;
+      return helpers.settings.makeLabel(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").prepend($desc).append($input));
     },
     makeText: function(number, isSub, setting, details) {
       var $indent = $("<div/>").addClass("form__row__indent");
@@ -475,7 +483,6 @@ helpers = {
       });
 
       var $desc = $("<div/>").addClass("form__input-description").html(details.set.about);
-
       return helpers.settings.makeLabel(number, details.query, isSub).append($indent.append($desc));
     },
     makeEmpty: function(number, isSub, setting, details) {
@@ -1347,6 +1354,54 @@ sidebar = {
 
     $("<h3/>").html("SG Tools").addClass("sidebar__heading").insertAfter($sideentry)
       .after($tools.addClass("sidebar__navigation"));
+  },
+  activeThreads: {
+    find: function() {
+      switch(frogVars.lists.activeTalk.value) {
+        case 0: sidebar.activeThreads.hidden(); break;
+        case 1: sidebar.activeThreads.sidebar(); break;
+        default: sidebar.activeThreads.shown(); break;
+      }
+    },
+    shown: function() {
+      //special handling if grid view
+      if (frogVars.lists.gridView.value) {
+        $(".widget-container.widget-container--margin-top").siblings().addBack().css('clear', 'both');
+      }
+    },
+    hidden: function() {
+      $(".widget-container.widget-container--margin-top").children().remove();
+    },
+    sidebar: function() {
+      //no 'Active Discussions' section on page
+      if ($(".widget-container.widget-container--margin-top").length === 0) { return; }
+
+      var formatForSidebar = function($table, sideTitle) {
+        var $list = $("<ul/>").addClass("sidebar__navigation");
+
+        $.each($table.find(".table__row-inner-wrap"), function(i, thread) {
+          var $thread = $(thread),
+              $origin = $thread.find(".table__column--width-fill").first(),
+              $topic = $origin.find("h3").find("a");
+
+          $list.append(helpers.makeSideLink($topic.attr("href"), $topic.html(),
+                                                 $origin.find("a.table__column__secondary-link").first().html().replace(/ comments/i, ""),
+                                                 "by "+ $thread.find(".table_image_avatar").attr("href").replace("/user/", "")));
+        });
+
+        $("<h3/>").addClass("sidebar__heading").html(sideTitle).insertAfter($(".sidebar__navigation").last()).after($list);
+      };
+
+      if ((frogVars.lists.activeTalk.sub.activeTalkSide.value & 2)) {
+        formatForSidebar($(".homepage_heading[href='/discussions']").siblings(".table"), "Active Discussions");
+      }
+      if ((frogVars.lists.activeTalk.sub.activeTalkSide.value & 1)) {
+        formatForSidebar($(".homepage_heading[href='/discussions/deals']").siblings(".table"), "Recent Deal Discussions");
+      }
+
+      $(".sidebar").trigger("adjusted");
+      sidebar.activeThreads.hidden(); //now hide main discussion section
+    }
   }
 },
 giveaways = {
@@ -1679,49 +1734,6 @@ giveaways = {
       $(".pinned-giveaways__inner-wrap").removeClass("pinned-giveaways__inner-wrap--minimized");
       $(".pinned-giveaways__button-expand").hide();
       $(".pinned-giveaways__button-collapse").show();
-    }
-  },
-  activeThreads: {
-    find: function() {
-      switch(frogVars.lists.activeTalk.value) {
-        case 0: giveaways.activeThreads.hidden(); break;
-        case 1: giveaways.activeThreads.sidebar(); break;
-        default: giveaways.activeThreads.shown(); break;
-      }
-    },
-    shown: function() {
-      //special handling if grid view
-      if (frogVars.lists.gridView.value) {
-        $(".widget-container.widget-container--margin-top").siblings().addBack().css('clear', 'both');
-      }
-    },
-    hidden: function() {
-      $(".widget-container.widget-container--margin-top").children().remove();
-    },
-    sidebar: function() {
-      var $sideentry = $(".sidebar__navigation").last();
-
-      //no 'Active Discussions' section on page
-      if ($(".widget-container.widget-container--margin-top").length === 0) { return; }
-
-      var $list = $("<ul/>").addClass("sidebar__navigation"),
-          $container = $(".homepage_heading[href='/discussions']").siblings(".table");
-
-      $.each($container.find(".table__row-inner-wrap"), function(i, thread) {
-        var $thread = $(thread),
-            $origin = $thread.find(".table__column--width-fill").first(),
-            $topic = $origin.find("h3").find("a");
-
-        $list.append(helpers.makeSideLink($topic.attr("href"), $topic.html(),
-                                               $origin.find("a.table__column__secondary-link").first().html().replace(/ comments/i, ""),
-                                               "by "+ $thread.find(".table_image_avatar").attr("href").replace("/user/", "")));
-      });
-
-      $("<h3/>").addClass("sidebar__heading").html("Active Discussions")
-        .insertAfter($sideentry).after($list);
-      $(".sidebar").trigger("adjusted");
-
-      giveaways.activeThreads.hidden();
     }
   }
 },
@@ -2281,7 +2293,6 @@ pointless = {
     giveaways.hideEntered($document);
     giveaways.easyHide($document);
     giveaways.gridForm($document);
-    giveaways.activeThreads.find();
     giveaways.injectWinnerTools();
     giveaways.injectEndDate();
     giveaways.expandedGroups();
@@ -2289,6 +2300,7 @@ pointless = {
 
     sidebar.removeMyGA();
     sidebar.injectSGTools();
+    sidebar.activeThreads.find();
 
     threads.injectTimes($document);
     threads.tracking.all($document);
