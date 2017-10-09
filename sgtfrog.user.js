@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.9
+// @version      1.0.0-alpha.10
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1977,10 +1977,10 @@ users = {
       }
     });
   },
-  moreStats: function() {
-    if (!frogVars.social.userStats.value || !~location.pathname.indexOf('/user/')) { return; }
+  moreStats: function($doc, isHover) {
+    if (!frogVars.social.userStats.value || (!isHover && !~location.pathname.indexOf('/user/'))) { return; }
 
-    var statElms = $(".featured__table__row__right");
+    var statElms = $doc.find(".featured__table__row__right");
 
     //real won
     var wonValElm = $(statElms[5]).find("[data-ui-tooltip]").last(),
@@ -2079,6 +2079,9 @@ profiles = {
             }).done(function(data) {
               var $data = $(data);
               lastLoad = link;
+
+              //pre-apply stats if needed
+              users.moreStats($data, true);
 
               //apply role colors
               var $suspension = $data.find(".sidebar__suspension"),
@@ -2274,7 +2277,7 @@ pointless = {
     users.listIndication($document);
     users.listenForLists($(".featured__heading__medium").text());
     users.injectListRefresh();
-    users.moreStats();
+    users.moreStats($document);
 
     groups.profileHover($document);
     groups.tagging.show();
