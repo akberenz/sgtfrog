@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.10
+// @version      1.0.0-alpha.11
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1048,6 +1048,7 @@ loading = {
       giveaways.injectFlags.wishlist($doc);
       giveaways.injectFlags.recent($doc);
       giveaways.injectChance($doc);
+      giveaways.injectWins($doc);
       giveaways.highlightCopies($doc);
       giveaways.injectSearch($doc);
       giveaways.hideEntered($doc);
@@ -1446,6 +1447,27 @@ giveaways = {
       $(fga).children().first().after($chance);
     });
   },
+  injectWins: function($doc) {
+    if (!helpers.pageSet.GAList()) { return; }
+
+    $.each($doc.find(".giveaway__row-outer-wrap"), function(i, ga) {
+      var $ga = $(ga);
+
+      //only affect completed GA's
+      if ($ga.find(".giveaway__column--positive,.giveaway__column--negative").length) {
+        var wins = 1,
+            copies = $ga.find('.giveaway__heading__thin').first().html(),
+            entries = $ga.find(".giveaway__links").find("span").first().html().replace(/\D+/g, '');
+
+        if (!~copies.indexOf("P")) { wins = copies.replace(/\D+/g, ''); }
+        if (+wins > +entries) { wins = entries; }
+
+        var $winLink = $("<a/>").attr("href", $ga.find(".giveaway__heading__name").attr("href") +"/winners")
+                        .html("<i class='fa fa-trophy'></i> <span>" + Intl.NumberFormat().format(wins) +" winner"+ (+wins>1? "s":"") +"</span>");
+        $ga.find(".giveaway__links").append($winLink);
+      }
+    });
+  },
   highlightCopies: function($doc) {
     if (!frogVars.lists.moreCopies.value) { return; }
 
@@ -1605,6 +1627,8 @@ giveaways = {
       var $link = $wrap.find(".fa-tag").next();
       $link.html($link.text().replace(/([\d,]+) \w+/, "$1"));
       $link = $wrap.find(".fa-comment").next();
+      $link.html($link.text().replace(/([\d,]+) \w+/, "$1"));
+      $link = $wrap.find(".fa-trophy").next();
       $link.html($link.text().replace(/([\d,]+) \w+/, "$1"));
     });
 
@@ -2249,6 +2273,7 @@ pointless = {
 
     giveaways.injectFlags.all($document);
     giveaways.injectChance($document);
+    giveaways.injectWins($document);
     giveaways.highlightCopies($document);
 
     giveaways.injectSearch($document);
