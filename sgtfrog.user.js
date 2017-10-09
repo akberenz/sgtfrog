@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.8
+// @version      1.0.0-alpha.9
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -168,6 +168,10 @@ var frogVars = {
           set: { type: "text", options: ["Foreground", "Background"], about: "Enter value as hexadecimal color, leave blank for defaults." }
         }
       }
+    },
+    userStats: {
+      key: "userStats", value: GM_getValue("userStats", 1), query: "Provide more visibility on user stats?",
+      set: { type: "circle", options: ["Yes", "No"] }
     },
     userTools: {
       key: "userTools", value: GM_getValue("userTools", 1), query: "Show SGTools links on user and winner pages?",
@@ -1972,6 +1976,32 @@ users = {
         }
       }
     });
+  },
+  moreStats: function() {
+    if (!frogVars.social.userStats.value || !~location.pathname.indexOf('/user/')) { return; }
+
+    var statElms = $(".featured__table__row__right");
+
+    //real won
+    var wonValElm = $(statElms[5]).find("[data-ui-tooltip]").last(),
+        wonJSON = JSON.parse(wonValElm.attr('data-ui-tooltip')),
+        won = wonJSON.rows[0].columns[1].name;
+    wonJSON.rows.push({"icon": [{"class": "fa-eye", "color": "#ec8583"}], "columns": [{"name": "Display Value"}, {"name": wonValElm.html(), "color": "#8f96a6"}]});
+    wonValElm.html(won +' / '+ wonValElm.html()).attr('data-ui-tooltip', JSON.stringify(wonJSON));
+
+    //real sent
+    var sentValElm = $(statElms[6]).find("[data-ui-tooltip]").last(),
+        sentJSON = JSON.parse(sentValElm.attr('data-ui-tooltip')),
+        sent = sentJSON.rows[0].columns[1].name;
+    sentJSON.rows.push({"icon": [{"class": "fa-eye", "color": "#ec8583"}], "columns": [{"name": "Display Value"}, {"name": sentValElm.html(), "color": "#8f96a6"}]});
+    sentValElm.html(sent +' / '+ sentValElm.html()).attr('data-ui-tooltip', JSON.stringify(sentJSON));
+
+    //ratio
+    var levelValElms = $(statElms[7]).find('[data-ui-tooltip]'),
+        levelJSON = JSON.parse(levelValElms.first().attr('data-ui-tooltip')),
+        ratio = +(sent.replace(/[^\d\.]/g, '')) / +(won.replace(/[^\d\.]/g, ''));
+    levelJSON.rows.push({"icon": [{"class": "fa-percent", "color": "#8f96a6"}], "columns": [{"name": "Contributor Ratio"}, {"name": ratio.toFixed(2), "color": "#8f96a6"}]});
+    levelValElms.attr('data-ui-tooltip', JSON.stringify(levelJSON));
   }
 },
 groups = {
@@ -2244,6 +2274,7 @@ pointless = {
     users.listIndication($document);
     users.listenForLists($(".featured__heading__medium").text());
     users.injectListRefresh();
+    users.moreStats();
 
     groups.profileHover($document);
     groups.tagging.show();
