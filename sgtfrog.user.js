@@ -5,11 +5,11 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.12
+// @version      1.0.0-alpha.13
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
-// @require      https://cdnjs.cloudflare.com/ajax/libs/showdown/1.5.4/showdown.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/showdown/1.7.6/showdown.min.js
 // @grant        GM_addStyle
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -578,18 +578,20 @@ helpers = {
           // Strikeout or Spoiler
           type: "lang",
           filter: function(text) {
-            return text.replace(/(?:~T){2}([\s\S]+?)(?:~T){2}/g, "<del>$1</del>") //strikethrough
-                       .replace(/(?:~T)([\s\S]+?)(?:~T)/g, "<span class='spoiler'>$1</span>"); //spoiler
+            return text.replace(/(?:~){2}([\s\S]+?)(?:~){2}/g, "<del>$1</del>") //strikethrough
+                       .replace(/(?:~)([\s\S]+?[^\\])(?:~)/g, "<span class='spoiler'>$1</span>"); //spoiler
           }
         },
         {
           // Images as toggle
           type: "lang",
           regex: /!\[(.*)?]\((.+)\)/g,
-          replace: "<div>\n<div class='comment__toggle-attached'>View attached image.</div>" +
-                    "<a href='$2' rel='nofollow noreferrer' target='_blank'>" +
-                    "<img class='is-hidden' alt='$1' title='$1' src='$2'>" +
-                    "</a></div>\n<br/>"
+          replace:  "<div><div>" +
+                    " <div class='comment__toggle-attached'>View attached image.</div>" +
+                    " <a href='$2' rel='nofollow noreferrer' target='_blank'>" +
+                    "  <img class='is-hidden' alt='$1' title='$1' src='$2'>" +
+                    " </a>" +
+                    "</div></div>"
         },
         {
           // Images to bottom
@@ -609,12 +611,19 @@ helpers = {
           filter: function(html) {
             return html.replace(/(<p><br\/?><\/p>|^\n$)/gm, "").replace(/(^(?!.*p>$).+)(<\/(a|span|del|em|code)>|[^>])\n/gm, "$1$2<br/>");
           }
+        },
+        {
+          // showdown does some extra bullshit on code+&lt; tags, revert it here
+          type: "output",
+          filter: function(html) {
+            return html.replace(/&amp;lt;/gm, "&lt;");
+          }
         }
       ];
 
       showdown.extension("SGMD", function() { return subExts; });
     },
-    getConverter: function() {
+    parse: function(raw) {
       if (helpers.markdown.converter == null) {
         helpers.markdown.setupShowdown();
         helpers.markdown.converter = new showdown.Converter({
@@ -626,10 +635,7 @@ helpers = {
         });
       }
 
-      return helpers.markdown.converter;
-    },
-    parse: function(raw) {
-      return helpers.markdown.getConverter().makeHtml(raw);
+      return helpers.markdown.converter.makeHtml(raw);
     },
     inject: function(selStart, selEnd, raw, pre, post) {
       if (selStart === 0 || raw.charAt(selStart-1) === '\n') { pre = pre.replace(/^\n+/, ''); }
