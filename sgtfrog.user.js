@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.13
+// @version      1.0.0-alpha.14
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -126,7 +126,11 @@ var frogVars = {
   threads: {
     _name: "Comment Threads",
     collapsed: {
-      key: "collapsed", value: GM_getValue("collapsed", 1), query: "After first page, collapse original discussion post:",
+      key: "collapsed", value: GM_getValue("collapsed", 1), query: "After first page, collapse original discussion post?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    reversed: {
+      key: "reversed", value: GM_getValue("reversed", 0), query: "Reverse comment threads (newest first)?",
       set: { type: "circle", options: ["Yes", "No"] }
     },
     onDemand: {
@@ -134,7 +138,7 @@ var frogVars = {
       set: { type: "circle", options: ["Yes", "No"] }
     },
     tracking: {
-      key: "tracking", value: GM_getValue("tracking", 0), query: "Track read comments and topics on discussions:",
+      key: "tracking", value: GM_getValue("tracking", 0), query: "Track read comments and topics on discussions?",
       set: { type: "circle", options: ["Yes", "No"] }
     },
     formatting: {
@@ -1167,10 +1171,18 @@ loading = {
     loading.comments();
   },
   comments: function() {
-    var page = helpers.fromQuery("page");
+    //TODO - reverse load order if enabled !!!!!!!!
+
+    var page = helpers.fromQuery("page"),
+        lastPage = Math.ceil(+$(".pagination__results").find("strong").last().text().replace(/\D+/g, "") / 25);
+
     if (page == undefined) { page = 1; }
-    var lastPage = $(".pagination__navigation").children().last().attr('data-page-number');
     $(".page__heading").last().after($(".pagination").detach());
+
+    //flip values if reversed
+    if (frogVars.threads.reversed.value) {
+      page = lastPage - (page - 1);
+    }
 
     //prevent multiple occurences from cancelling a reply
     $(".js__comment-reply-cancel").on("click", function(e) {
@@ -1191,7 +1203,8 @@ loading = {
       if (nearEdge >= 0.90 && !inload) {
         inload = true;
 
-        if (page++ < lastPage) {
+        if ((frogVars.threads.reversed.value && page-- > 1)
+            || (!frogVars.threads.reversed.value && page++ < lastPage)) {
           var loc = location.href;
           if (~loc.indexOf("#")) {
             loc = loc.replace(/#\w+$/, ""); //anchor tags cause appending problems
@@ -1214,11 +1227,18 @@ loading = {
             var $data = $(data);
             loading.everyNew.commentPage($data);
 
-            var $paging = $data.find(".pagination");
-            $paging.find(".pagination__navigation").html("Page " + page);
+            var $paging = $data.find(".pagination"),
+                $rootComments = $(".comments").last(),
+                $newComments = $data.find(".comments").last().children();
 
-            $(".comments").last().append($paging)
-              .append($data.find(".comments").last().children().detach());
+            $paging.find(".pagination__navigation").html("Page " + page);
+            $rootComments.append($paging);
+
+            if (frogVars.threads.reversed.value) {
+              $newComments = $newComments.get().reverse();
+            }
+
+            $rootComments.append($newComments);
 
             inload = false;
             loading.removeSpinner();
@@ -1858,9 +1878,56 @@ threads = {
       $(".comment__collapse-button").first().trigger("click");
     }
   },
+  reverse: function() {
+    if (!frogVars.threads.reversed.value || (!~location.href.indexOf("/discussion/") && !~location.href.indexOf("/giveaway/"))) { return; }
+
+    //find last page of thread
+    var $totalCount = $(".pagination__results").find("strong").last(),
+        lastPage = Math.ceil(+$totalCount.text().replace(/\D+/g, "") / 25);
+
+    logging.debug("Thread has "+ lastPage +" pages");
+
+    //find current page of thread
+    var onPage = 1,
+        loadPage = lastPage;
+
+    if (~location.search.indexOf("page=")) {
+      onPage = +($(".pagination__navigation").find(".is-selected").text());
+      if (onPage < 1) { onPage = 1; } //cases where no pages are present
+
+      loadPage = lastPage - (onPage - 1);
+    } // else first page, so load the very last page, ig. keep defaults
+
+    logging.info("Page "+ onPage +" will now be page "+ loadPage);
+
+    var $comments = $(".comments").last();
+
+    if (onPage == loadPage) {
+      //skip loading if in the exact middle of the thread pages
+      $comments.append($comments.children().get().reverse());
+    } else {
+      $comments.empty();
+
+      var loc = location.href;
+      if (~loc.indexOf("?")) {
+        loc = loc.replace(/page=\d+?&?/, ""); //keep other params
+      } else {
+        loc += "/search?";
+      }
+
+      $.ajax({
+        method: "GET",
+        url: loc + "&page=" + loadPage
+      }).done(function(data) {
+        var $data = $(data);
+
+        $comments.append($data.find(".comments").last().children().get().reverse());
+        $(".pagination__results").html($data.find(".pagination__results").html());
+      });
+    }
+  },
   injectTimes: function($doc) {
     if (!~location.href.indexOf("/discussion/")) { return; }
-
     $.each($doc.find(".comment__actions"), function(i, elm) {
       var $edit = $($(elm).children().first().children()[1]);
 
@@ -2308,6 +2375,7 @@ pointless = {
     sidebar.injectSGTools();
     sidebar.activeThreads.find();
 
+    threads.reverse($document);
     threads.injectTimes($document);
     threads.tracking.all($document);
     threads.commentBox.injectPageHelpers();
