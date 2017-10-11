@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.14
+// @version      1.0.0-alpha.15
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1083,6 +1083,12 @@ loading = {
       threads.tracking.all($doc);
       threads.commentBox.injectEdit($doc);
       loading.imgDemand($doc);
+    },
+    generalPage: function($doc) {
+      users.profileHover($doc);
+      users.tagging.show($doc);
+      users.listIndication($doc);
+      threads.tracking.all($doc);
     }
   },
   giveaways: function() {
@@ -1171,8 +1177,6 @@ loading = {
     loading.comments();
   },
   comments: function() {
-    //TODO - reverse load order if enabled !!!!!!!!
-
     var page = helpers.fromQuery("page"),
         lastPage = Math.ceil(+$(".pagination__results").find("strong").last().text().replace(/\D+/g, "") / 25);
 
@@ -1277,6 +1281,7 @@ loading = {
           url: loc +"&page="+ page
         }).done(function(data) {
           var $data = $(data);
+          loading.everyNew.generalPage($data);
 
           var $paging = $data.find(".pagination");
           var $nav = $paging.find(".pagination__navigation");
@@ -1938,11 +1943,11 @@ threads = {
   },
   tracking: {
     all: function($doc) {
-      if (frogVars.threads.tracking.value && ~location.pathname.indexOf("/discussions")) { threads.tracking.lists("discuss"); }
+      if (frogVars.threads.tracking.value && ~location.pathname.indexOf("/discussions")) { threads.tracking.lists("discuss", $doc); }
       if (frogVars.threads.tracking.value && ~location.pathname.indexOf("/discussion/")) { threads.tracking.posts("discuss", $doc); }
     },
-    lists: function(set) {
-      var $rows = $(".table__row-outer-wrap");
+    lists: function(set, $doc) {
+      var $rows = $doc.find(".table__row-outer-wrap");
       logging.debug("Found "+ $rows.length +" rows");
       $.each($rows, function(i, row) {
         var $comment = $(row).find(".table__column--width-small").find("a");
