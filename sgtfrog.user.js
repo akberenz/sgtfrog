@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.15
+// @version      1.0.0-alpha.16
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -141,6 +141,10 @@ var frogVars = {
       key: "tracking", value: GM_getValue("tracking", 0), query: "Track read comments and topics on discussions?",
       set: { type: "circle", options: ["Yes", "No"] }
     },
+    pinning: {
+      key: "pinning", value: GM_getValue("pinning", 1), query: "Allow discussions to be pinned?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
     formatting: {
       key: "formatting", value: GM_getValue("formatting", 1), query: "Show quick format buttons on comment box?",
       set: { type: "circle", options: ["Yes", "No"] }
@@ -214,7 +218,8 @@ var frogTags = {
   groups: JSON.parse(GM_getValue("groupTags", '{}'))
 };
 var frogTracks = {
-  discuss: JSON.parse(GM_getValue("tracks[discuss]", '{}'))
+  discuss: JSON.parse(GM_getValue("tracks[discuss]", '{}')),
+  pins: JSON.parse(GM_getValue("tracks[pins]", '{}'))
 };
 
 
@@ -899,7 +904,7 @@ settings = {
         $("head").append($(data.substring(jsIndex, data.indexOf("</script>", jsIndex))));
 
         //re-skin
-        $(".page__heading__breadcrumbs").children("a").last()
+        $(".page__heading__breadcrumbs").first().children("a").last()
           .html("Sgt Frog").attr("href", "/accoumt/settings/ribbit");
         $(".sidebar__navigation").find("a[href='" + usePage + "']").parent()
           .removeClass("is-selected").find("i").remove();
@@ -1947,8 +1952,9 @@ threads = {
       if (frogVars.threads.tracking.value && ~location.pathname.indexOf("/discussion/")) { threads.tracking.posts("discuss", $doc); }
     },
     lists: function(set, $doc) {
-      var $rows = $doc.find(".table__row-outer-wrap");
+      var $rows = $doc.find(".table__row-inner-wrap");
       logging.debug("Found "+ $rows.length +" rows");
+
       $.each($rows, function(i, row) {
         var $comment = $(row).find(".table__column--width-small").find("a");
         var at = $comment.attr("href").indexOf("/", 1) + 1;
@@ -1986,6 +1992,106 @@ threads = {
 
       logging.info("Found "+ findings +" unread posts");
       GM_setValue("tracks["+ set +"]", JSON.stringify(frogTracks[set]));
+    }
+  },
+  pins: {
+    _found: [],
+    injectButton: function() {
+      if (!frogVars.threads.pinning.value || !~location.pathname.indexOf("/discussion/")) { return; }
+
+      var tag = location.href.split("/")[4],
+          activeClass = "fa-rotate-90 icon-green is-pinned",
+          $tack = $("<i/>").addClass("fa fa-thumb-tack"),
+          $pin = $("<div/>").addClass("is-clickable").html($tack)
+                  .on('click', function(evt) {
+                    if (frogTracks.pins[tag]) {
+                      $tack.removeClass(activeClass);
+                      delete frogTracks.pins[tag];
+                      logging.info("Removed "+ tag +" from pins");
+                    } else {
+                      $tack.addClass(activeClass);
+                      frogTracks.pins[tag] = location.href.split("/")[5]; //include last known name in tracking
+                      logging.info("Added "+ tag +" to pins");
+                    }
+
+                    //save tracks
+                    GM_setValue("tracks[pins]", JSON.stringify(frogTracks.pins));
+                  });
+
+      //switch to a removal pin if already set
+      if (frogTracks.pins[tag]) { $tack.addClass(activeClass); }
+
+      $(".page__heading__breadcrumbs").first().after($pin);
+    },
+    findPinned: function() {
+      if (!frogVars.threads.pinning.value || !~location.pathname.indexOf("/discussions")) { return; }
+
+      var havePins = Object.keys(frogTracks.pins).length;
+      logging.info("Adding "+ havePins +" pins above discussions");
+
+      //add the pinned divider if needed
+      if (havePins) {
+        if (!$(".row-spacer").length) {
+          $(".table__rows").prepend($("<div/>").addClass("row-spacer"));
+        }
+      }
+
+      //add the actual pins
+      for(var pinId in frogTracks.pins) {
+        //if pin is not on current page (best case), then try pulling from search on last known title
+        if (!threads.pins.pullFromPage($document, pinId, true)) {
+          threads.pins.loadFromSearch(pinId, frogTracks.pins[pinId]);
+        }
+      };
+    },
+    pullFromPage: function($doc, pinId, local) {
+      var $onPage = $doc.find("[href^='/discussion/"+ pinId +"/']").first().parents(".table__row-outer-wrap");
+      if ($onPage.length) {
+        if (local) { $onPage.addClass("is-local"); }
+
+        threads.pins._found.push($onPage);
+        threads.pins.attemptInjection();
+
+        return $onPage;
+      }
+
+      return null;
+    },
+    loadFromSearch: function(pinId, pinTitle, failIfMissing) {
+      $.ajax({
+        method: "GET",
+        url: "/discussions/search?q="+ pinTitle
+      }).done(function(data) {
+        if (!threads.pins.pullFromPage($(data), pinId) && !failIfMissing) {
+          //thread has changed names - load discussion to pull new title, then pull from page (worst case)
+          $.ajax({
+            method: "GET",
+            url: "/discussion/"+ pinId +"/"
+          }).done(function(data) {
+            var newTitle = $(data).find(".page__heading__breadcrumbs").first().children("a").last().text();
+
+            //update saved information on pin
+            frogTracks.pins[pinId] = newTitle;
+            GM_setValue("tracks[pins]", JSON.stringify(frogTracks.pins));
+
+            threads.pins.loadFromSearch(pinId, newTitle, true);
+          });
+        }
+      });
+    },
+    attemptInjection: function() {
+      if (threads.pins._found.length == Object.keys(frogTracks.pins).length) {
+        threads.pins._found.sort(function(a,b) {
+          //newest at the top
+          return (+a.find("[data-timestamp]").attr("data-timestamp")) - (+b.find("[data-timestamp]").attr("data-timestamp"));
+        });
+
+        $.each(threads.pins._found, function(i, elm) {
+          $(".table__rows").prepend(elm.addClass("is-pinned"));
+        });
+
+        loading.everyNew.generalPage($(".is-pinned").not(".is-local"));
+      }
     }
   }
 },
@@ -2141,14 +2247,14 @@ groups = {
   }
 },
 profiles = {
-  frame: null,
+  _frame: null,
   hover: function(isUser, $doc) {
     if (!frogVars.social.hoverInfo.value) { return; }
 
-    var $box = profiles.frame;
+    var $box = profiles._frame;
     if ($box == null) {
       var $box = $("<div/>").addClass("global__image-outer-wrap hover-panel__outer-wrap").appendTo($("body")).hide();
-      profiles.frame = $box;
+      profiles._frame = $box;
 
       var $hoverbox = $("<div/>").addClass("hover-panel__inner-wrap").appendTo($box);
       $("<a/>").addClass("hover-panel__link").append($("<div/>").addClass("hover-panel__image")).appendTo($hoverbox);
@@ -2386,6 +2492,8 @@ pointless = {
     threads.commentBox.injectPageHelpers();
     threads.commentBox.injectPagePreview();
     threads.commentBox.injectEdit($document);
+    threads.pins.injectButton();
+    threads.pins.findPinned();
 
     users.profileHover($document);
     users.tagging.show($document);
