@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.16
+// @version      1.0.0-alpha.17
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -606,10 +606,9 @@ helpers = {
           // Images to bottom
           type: "output",
           filter: function(html) {
-            var $whole = $("<div/>").append($(html)),
-                $images = $whole.find(".comment__toggle-attached").parent().detach();
+            var $whole = $("<div/>").append($(html));
 
-            $whole.append($images);
+            $whole.append($whole.find(".comment__toggle-attached").parent());
 
             return $whole.html();
           }
@@ -1023,7 +1022,7 @@ fixedElements = {
         $sidead = $(".sidebar__mpu"); //hide the advertisement on scroll
 
     //create a wrap to avoid loss of panel dimensions
-    $sidebar.children().detach().appendTo($sidewrap);
+    $sidebar.children().appendTo($sidewrap);
     $sidewrap.appendTo($sidebar);
     $sidebar.on('adjusted', function() { $sidebar.css({"min-height": $sidewrap.height()}); });
     $sidebar.trigger("adjusted");
@@ -1102,7 +1101,7 @@ loading = {
 
     var page = helpers.fromQuery("page");
     if (page == undefined) { page = 1; }
-    $(".widget-container").find(".page__heading").first().after($(".pagination").detach());
+    $(".widget-container").find(".page__heading").first().after($(".pagination"));
 
     var inload = false;
     $document.on("scroll", function() {
@@ -1131,7 +1130,7 @@ loading = {
           loading.everyNew.giveawayPage($data);
 
           $data.find(".pinned-giveaways__outer-wrap").remove(); //avoid appending pinned every load
-          var $nextGiveaways = $data.find(".giveaway__row-outer-wrap").detach();
+          var $nextGiveaways = $data.find(".giveaway__row-outer-wrap");
 
           var $paging = $data.find(".pagination");
           var $nav = $paging.find(".pagination__navigation");
@@ -1186,13 +1185,14 @@ loading = {
         lastPage = Math.ceil(+$(".pagination__results").find("strong").last().text().replace(/\D+/g, "") / 25);
 
     if (page == undefined) { page = 1; }
-    $(".page__heading").last().after($(".pagination").detach());
+    $(".page__heading").last().after($(".pagination"));
 
     //flip values if reversed
     if (frogVars.threads.reversed.value) {
       page = lastPage - (page - 1);
     }
 
+    //TODO !! move to top instead if setting enabled !!
     //prevent multiple occurences from cancelling a reply
     $(".js__comment-reply-cancel").on("click", function(e) {
       //SG calls
@@ -1200,7 +1200,7 @@ loading = {
       $(".comment--submit .comment__child").attr("class", "comment__parent");
 
       //alternate movement calls
-      var $box = $(".comment--submit").detach();
+      var $box = $(".comment--submit");
       $box.insertAfter($(".comments").last());
 
       e.stopImmediatePropagation();
@@ -1261,7 +1261,7 @@ loading = {
 
     var page = helpers.fromQuery("page");
     if (page == undefined) { page = 1; }
-    $(".widget-container").find(".page__heading").first().after($(".pagination").detach());
+    $(".widget-container").find(".page__heading").first().after($(".pagination"));
 
     var inload = false;
     $document.on("scroll", function() {
@@ -1291,7 +1291,7 @@ loading = {
           var $paging = $data.find(".pagination");
           var $nav = $paging.find(".pagination__navigation");
 
-          var $nextContent = $data.find(".table__row-outer-wrap").detach();
+          var $nextContent = $data.find(".table__row-outer-wrap");
 
           if ($nav.children().last().text().trim() !== 'Last') {
             var lastNum = $nav.children().last().attr("data-page-number");
@@ -1580,7 +1580,7 @@ giveaways = {
     if (!frogVars.detail.allGroup.value || !~location.href.indexOf("/giveaway/")) { return; }
 
     //remove group indicator if present, quit if not
-    var $group = $(".featured__column--group").detach();
+    var $group = $(".featured__column--group");
     if ($group.length === 0) {
       logging.debug("No groups to expand");
       return;
@@ -1629,7 +1629,7 @@ giveaways = {
     if (!frogVars.detail.searchSame.value || !~location.href.indexOf("/giveaway/")) { return; }
 
     var $side = $(".sidebar__navigation").parent();
-    var $entry = $side.children("form").detach();
+    var $entry = $side.children("form");
     if ($entry) {
       if (!$entry.hasClass("sidebar__error")) {
         $entry.css("background-image", "none").css("border", "none");
@@ -1696,7 +1696,7 @@ giveaways = {
       $wrap.find(".giveaway_image_avatar").remove();
 
       //move the game image to the top
-      $wrap.find(".giveaway__row-inner-wrap").prepend($wrap.find(".giveaway_image_thumbnail,.giveaway_image_thumbnail_missing").detach());
+      $wrap.find(".giveaway__row-inner-wrap").prepend($wrap.find(".giveaway_image_thumbnail,.giveaway_image_thumbnail_missing"));
 
       //split name from fee/actions
       var feeActions = $wrap.find(".giveaway__heading").children().not(".giveaway__heading__name").detach();
@@ -1711,7 +1711,7 @@ giveaways = {
 
       //badges in a single row
       $wrap.find(".giveaway__columns").before($("<div/>").addClass("giveaway__columns giveaway__columns--badges")
-                                             .html($wrap.find(".giveaway__column--width-fill").nextAll().detach())
+                                             .html($wrap.find(".giveaway__column--width-fill").nextAll())
                                              .prepend($("<div/>").addClass("giveaway__column--empty")));
 
       //condense links
@@ -1820,7 +1820,7 @@ threads = {
 
       //special treatment for new discussion
       if ($commenter.hasClass("form__rows")) {
-        $("<div/>").addClass("align-button-container").append($(".form__submit-button").detach()).append($previewBtn).insertAfter($(".form__row").last());
+        $("<div/>").addClass("align-button-container").append($(".form__submit-button")).append($previewBtn).insertAfter($(".form__row").last());
       } else {
         $commenter.find(".comment__submit-button, .page__description__save").last().after($previewBtn);
       }
