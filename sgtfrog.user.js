@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.17
+// @version      1.0.0-alpha.18
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -131,6 +131,10 @@ var frogVars = {
     },
     reversed: {
       key: "reversed", value: GM_getValue("reversed", 0), query: "Reverse comment threads (newest first)?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    commentTop: {
+      key: "commentTop", value: GM_getValue("commentTop", 0), query: "Show comment box at the top of threads?",
       set: { type: "circle", options: ["Yes", "No"] }
     },
     onDemand: {
@@ -1192,7 +1196,6 @@ loading = {
       page = lastPage - (page - 1);
     }
 
-    //TODO !! move to top instead if setting enabled !!
     //prevent multiple occurences from cancelling a reply
     $(".js__comment-reply-cancel").on("click", function(e) {
       //SG calls
@@ -1201,7 +1204,11 @@ loading = {
 
       //alternate movement calls
       var $box = $(".comment--submit");
-      $box.insertAfter($(".comments").last());
+      if (frogVars.threads.commentTop.value) {
+        $box.insertBefore($(".comments").last());
+      } else {
+        $box.insertAfter($(".comments").last());
+      }
 
       e.stopImmediatePropagation();
     });
@@ -1775,6 +1782,11 @@ giveaways = {
 },
 threads = {
   commentBox: {
+    moveToTop: function() {
+      if (!frogVars.threads.commentTop.value || (!~location.href.indexOf("/discussion") && !~location.href.indexOf("/giveaway/"))) { return; }
+
+      $(".comments").last().prepend($(".comment--submit"));
+    },
     injectHelpers: function($commenter) {
       var $row = $("<div/>").addClass("align-button-container align-button-container-top"),
           containClass = "button-container",
@@ -2489,6 +2501,7 @@ pointless = {
     threads.reverse($document);
     threads.injectTimes($document);
     threads.tracking.all($document);
+    threads.commentBox.moveToTop();
     threads.commentBox.injectPageHelpers();
     threads.commentBox.injectPagePreview();
     threads.commentBox.injectEdit($document);
