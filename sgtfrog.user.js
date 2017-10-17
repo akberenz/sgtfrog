@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.21
+// @version      1.0.0-alpha.22
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -752,6 +752,7 @@ helpers = {
       ".form__input-tiny{ width: 80px !important; display: inline-block; } " + // !important to override default input size
       ".form__row__sub .form__checkbox{ display: inline-block; margin-right: 10px; color: inherit; border-bottom: none; } ";
 
+
       /* Conditionals (would affect layout if feature disabled) */
 
       //settings page
@@ -776,22 +777,26 @@ helpers = {
                   "  box-shadow: none !important; }";
       }
       if (frogVars.lists.colorBadge.value) {
-        sSheet += ".giveaway__column--invite-only{ background-image: linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
+        sSheet += ".giveaway__column--invite-only, .featured__column--invite-only{ " +
+                  "  background-image: linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
                   "  background-image: -moz-linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
                   "  background-image: -webkit-linear-gradient(#FFCDD2 0%, #F49B95 100%); " +
-                  "  border-color: #ef9a9a #e57373 #ef5350 #e57373 !important; color: #950000; }"+
+                  "  border-color: #ef9a9a #e57373 #ef5350 #e57373 !important; color: #950000; }" +
 
-                  ".giveaway__column--region-restricted{ background-image: linear-gradient(#D7CCC8 0%, #A18F89 100%); " +
+                  ".giveaway__column--region-restricted, .featured__column--region-restricted{ " +
+                  "  background-image: linear-gradient(#D7CCC8 0%, #A18F89 100%); " +
                   "  background-image: -moz-linear-gradient(#D7CCC8 0%, #A18F89 100%); " +
                   "  background-image: -webkit-linear-gradient(#D7CCC8 0%, #A18F89 100%); " +
-                  "  border-color: #BDBDBD #9E9E9E #757575 #9E9E9E !important; color: #5D4037; }"+
+                  "  border-color: #BDBDBD #9E9E9E #757575 #9E9E9E !important; color: #5D4037; }" +
 
-                  ".giveaway__column--whitelist{ background-image: linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
+                  ".giveaway__column--whitelist, .featured__column--whitelist{ " +
+                  "  background-image: linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
                   "  background-image: -moz-linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
                   "  background-image: -webkit-linear-gradient(#FFFFFF 0%, #E0E0E0 100%); " +
-                  "  color: #D81B60 !important; }"+
+                  "  color: #D81B60 !important; }" +
 
-                  ".giveaway__column--group{ background-image: linear-gradient(#DCEDC8 0%, #AED581 100%); " +
+                  ".giveaway__column--group, .featured__column--group{ " +
+                  "  background-image: linear-gradient(#DCEDC8 0%, #AED581 100%); " +
                   "  background-image: -moz-linear-gradient(#DCEDC8 0%, #AED581 100%); " +
                   "  background-image: -webkit-linear-gradient(#DCEDC8 0%, #AED581 100%); }";
       }
@@ -1497,48 +1502,55 @@ sidebar = {
 giveaways = {
   injectFlags: {
     all: function($doc) {
+      if (!helpers.pageSet.GAList() && !~location.pathname.indexOf("/giveaway/")) { return; }
+
       if (frogVars.lists.newBadges.value) {
         giveaways.injectFlags.wishlist($doc);
         giveaways.injectFlags.recent($doc);
       }
     },
     wishlist: function($doc) {
-      var $gives = $(".giveaway__row-outer-wrap");
+      var $badge = $("<div/>").addClass("giveaway__column--wish").attr("title", "Wishlist")
+                    .html("<i class='fa fa-fw fa-star'></i>");
 
-      if ($gives.length > 0) {
-        var $badge = $("<div/>").addClass("giveaway__column--wish").attr("title", "Wishlist");
-        $("<i/>").addClass("fa fa-fw fa-star").appendTo($badge);
-
-        //refresh wishlist daily
-        if (Date.now() - GM_getValue("cache-wish-time", 0) > (24*60*60*1000)) {
-          helpers.listingPit.invalidateList("wishes");
-        }
-
-        //load wishlist to know what gets badged
-        helpers.listingPit.getList("wishes", function(wishes) {
-          logging.info("Applying badges for "+ wishes.length +" wishes");
-
-          $.each(wishes, function(i, wish) {
-            var $gaBlock = $doc.find("a[href='"+ wish +"']").parent().parent();
-            var $block = $gaBlock.find(".giveaway__columns--badges");
-            if ($block.length) {
-                $block.prepend($badge.clone());
-            } else {
-              $gaBlock.find(".giveaway__column--width-fill").after($badge.clone());
-            }
-          });
-        });
+      //refresh wishlist daily
+      if (Date.now() - GM_getValue("cache-wish-time", 0) > (24*60*60*1000)) {
+        helpers.listingPit.invalidateList("wishes");
       }
+
+      //load wishlist to know what gets badged
+      helpers.listingPit.getList("wishes", function(wishes) {
+        logging.info("Applying badges for "+ wishes.length +" wishes");
+
+        $.each(wishes, function(i, wish) {
+          var $gaLink = $doc.find("a[href='"+ wish +"']");
+          if (!$gaLink.length) { return; }
+
+          var $gaRow = $gaLink.parents(".giveaway__summary").find(".giveaway__column--width-fill");
+          if (!$gaRow.length) {
+            $gaRow = $doc.find(".featured__column--width-fill");
+            $badge.addClass("featured__column");
+          }
+
+          $gaRow.after($badge.clone());
+        });
+      });
     },
     recent: function($doc) {
-      var $badge = $("<div/>").addClass("giveaway__column--new").attr("title", "New");
-        $("<i/>").addClass("fa fa-fw fa-fire").appendTo($badge);
+      var $badge = $("<div/>").addClass("giveaway__column--new").attr("title", "New")
+                    .html("<i class='fa fa-fw fa-fire'></i>");
 
-      $.each($doc.find(".giveaway__column--width-fill").find("span"), function(i, created) {
+      $.each($doc.find(".giveaway__column--width-fill,.featured__column--width-fill").find("[data-timestamp]"), function(i, created) {
         var $created = $(created);
         var timing = $created.html();
         if (~timing.indexOf("second") || ~timing.indexOf("minute")) {
-         $created.parent().parent().find(".giveaway__column--width-fill").after($badge.clone());
+          var $gaRow = $created.parents(".giveaway__summary").find(".giveaway__column--width-fill")
+          if (!$gaRow.length) {
+            $gaRow = $doc.find(".featured__column--width-fill");
+            $badge.addClass("featured__column");
+          }
+
+          $gaRow.after($badge.clone());
         }
       });
     }
