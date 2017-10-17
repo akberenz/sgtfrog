@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0-alpha.19
+// @version      1.0.0-alpha.20
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -67,6 +67,10 @@ var frogVars = {
     },
     winPercent: {
       key: "winPercent", value: GM_getValue("winPercent", 1), query: "Show giveaway win percentage?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
+    moreFilters: {
+      key: "moreFilters", value: GM_getValue("moreFilters", 1), query: "Show giveaway filtering?",
       set: { type: "circle", options: ["Yes", "No"] }
     },
     moreCopies: {
@@ -225,7 +229,44 @@ var frogTracks = {
   discuss: JSON.parse(GM_getValue("tracks[discuss]", '{}')),
   pins: JSON.parse(GM_getValue("tracks[pins]", '{}'))
 };
-
+var frogStatic = {
+  filters: [
+    [
+      {
+        name: "Level", type: "number", min: 0, max: 10,
+        inputs: [ { query: "level_min", label: "Min" }, { query: "level_max", label: "Max" } ]
+      },
+      {
+        name: "Copies", type: "number", min: 1,
+        inputs: [ { query: "copy_min", label: "Min" }, { query: "copy_max", label: "Max" } ]
+      },
+      {
+        name: "DLC", type: "circle", group: "dlc",
+        inputs: [ { value: "", label: "Included" }, { value: "false", label: "Excluded" }, { value: "true", label: "Only" } ]
+      }
+    ],
+    [
+      {
+        name: "Entries", type: "number", min: 0,
+        inputs: [ { query: "entry_min", label: "Min" }, { query: "entry_max", label: "Max" } ]
+      },
+      {
+        name: "Metascore", type: "number", min: 0, max: 100,
+        inputs: [ { query: "metascore_min", label: "Min" }, { query: "metascore_max", label: "Max" } ]
+      },
+      {
+        name: "Region Restricted", type: "circle", group: "region_restricted",
+        inputs: [ { value: "", label: "Included" }, { value: "false", label: "Excluded" }, { value: "true", label: "Only" } ]
+      }
+    ],
+    [
+      {
+        name: "Release Date", type: "date",
+        inputs: [ { query: "release_date_min" }, { query: "release_date_max" } ]
+      }
+    ]
+  ]
+};
 
 // Functions //
 var  dbgLevel = frogVars.script.debugging.sub.dbgConsole.value,
@@ -703,15 +744,19 @@ helpers = {
 
       //Comment format buttons
       ".button-container{ display: flex; } " +
-      ".align-button-container-top{ margin-bottom: 5px; }"
+      ".align-button-container-top{ margin-bottom: 5px; }" +
 
+      //Various form elements (filters / settings)
+      ".form__row__sub{ margin-left: 2.5em; } " +
+      ".form__input-small-date{ width: 132px !important; display: inline-block; } " + // !important to override default input size
+      ".form__input-tiny{ width: 80px !important; display: inline-block; } " + // !important to override default input size
+      ".form__row__sub .form__checkbox{ display: inline-block; margin-right: 10px; color: inherit; border-bottom: none; } ";
 
       /* Conditionals (would affect layout if feature disabled) */
 
       //settings page
       if (location.pathname === "/accoumt/settings/ribbit") {
         sSheet += "body{ background-image: none; background-color: #95A4C0; } " +
-                  ".form__row__sub{ margin-left: 2.5em; } " +
                   ".form__row__sub .form__heading__text{ color: #5A89FF; }";
       }
 
@@ -1780,6 +1825,120 @@ giveaways = {
       $(".pinned-giveaways__button-expand").hide();
       $(".pinned-giveaways__button-collapse").show();
     }
+  },
+  filters: {
+    inject: function() {
+      if (!frogVars.lists.moreFilters.value || (location.pathname !== '/' && !~location.href.indexOf("/giveaways/"))) { return; }
+
+      var $filters = $("<div/>").addClass("notification notification--warning notification--margin-top is-hidden").css("padding-bottom", "10px"),
+          $toggle = $("<a/>").addClass("is-clickable").html("<i class='fa fa-filter'></i>"),
+          $submit = $("<div/>").addClass("form__submit-button").css("float", "right").html("<i class='fa fa-arrow-circle-right'></i> Filter"),
+          columnSets = 100 / frogStatic.filters.length;
+
+      //filter box description
+      $filters.append("<div><em>Filter out shown giveaways based on desired criteria. Leave blanks to keep restriction unbounded.</em></div>");
+
+      $.each(frogStatic.filters, function(i, colSet) {
+        var $column = $("<div/>").css({ "width": columnSets +"%", "float": "left" }).appendTo($filters);
+
+        $.each(frogStatic.filters[i], function(j, filter) {
+          var $filterInput;
+
+          switch(filter.type) {
+            case "number":case "date": $filterInput = giveaways.filters.makeText(filter.type, filter.inputs, filter.min, filter.max); break;
+            case "circle": $filterInput = giveaways.filters.makeRadio(filter.inputs, filter.group); break;
+          }
+
+          $column.append("<strong>"+ filter.name +"</strong>").append($filterInput);
+        });
+      });
+
+      $filters.append($("<div/>").css("clear", "both").append($submit));
+
+      $(".page__heading").after($filters).find(".page__heading__breadcrumbs").after($toggle);
+
+      $toggle.on("click", function(evt) {
+        if ($filters.hasClass("is-hidden")) {
+          $filters.removeClass("is-hidden");
+        } else {
+          $filters.addClass("is-hidden");
+        }
+      });
+
+      $submit.on("click", function(evt) {
+        var query = helpers.fromQuery("type");
+        if (!query) {
+          query = "";
+        } else {
+          query = "type="+ query;
+        }
+
+        $.each($filters.find("input"), function(i, inp) {
+          var $inp = $(inp);
+
+          if ($inp.val()) {
+            query += "&"+ $inp.attr("data-query") +"="+ $inp.val();
+          }
+        });
+
+        location.href = "/giveaways/search?" + query;
+      });
+    },
+    makeText: function(type, inputs, mins, maxes) {
+      var $block = $("<div/>").addClass("form__row__sub");
+
+      $.each(inputs, function(i, inp) {
+        var $in = $("<input/>").attr("placeholder", inp.label).attr("type", type).attr("data-query", inp.query);
+
+        if (type === "date") {
+          $in.addClass("form__input-small-date");
+          //fill-in for no date type support
+          if ($in.get()[0].type !== "date") {
+            $in.attr("placeholder", "YYYY-MM-DD");
+          }
+        } else {
+          $in.addClass("form__input-tiny");
+        }
+
+        if (mins !== undefined) { $in.attr("min", mins); }
+        if (maxes !== undefined) { $in.attr("max", maxes); }
+
+        var val = helpers.fromQuery(inp.query);
+        if (val === undefined) { val = ""; }
+
+        $in.val(val);
+
+        if (i > 0) { $block.append(" - "); }
+        $block.append($in);
+      });
+
+      return $block;
+    },
+    makeRadio: function(inputs, group) {
+      var $block = $("<div/>").addClass("form__row__sub").css("line-height", "normal"),
+          $input = $("<input/>").attr("type", "hidden").attr("data-query", group);
+
+      $block.append($input);
+
+      $.each(inputs, function(i, inp) {
+        var $in = $("<span/>").addClass("form__checkbox").attr("data-checkbox-value", inp.value);
+
+        $in.html("<i class='form__checkbox__default fa fa-circle-o'></i>" +
+                 "<i class='form__checkbox__hover fa fa-circle'></i>" +
+                 "<i class='form__checkbox__selected fa fa-check-circle'></i>" +
+                 inp.label);
+
+        $block.append($in);
+      });
+
+      var val = helpers.fromQuery(group);
+      if (val === undefined) { val = ""; }
+
+      $block.find("[data-checkbox-value='"+ val +"']").addClass("is-selected");
+      $input.val(val);
+
+      return $block;
+    }
   }
 },
 threads = {
@@ -2485,6 +2644,7 @@ pointless = {
     giveaways.injectChance($document);
     giveaways.injectWins($document);
     giveaways.highlightCopies($document);
+    giveaways.filters.inject();
 
     giveaways.injectSearch($document);
     giveaways.injectNavSearch();
