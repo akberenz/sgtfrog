@@ -61,7 +61,7 @@
 
 ### since Version 1.0.0
 - Rewrote settings page to look more natural
-- Choice of dicussions to show in sidebar
+- Choice of discussions to show in sidebar
 - Reverse comment threads (continuous loading and standard)
 - Allow reply box to be shown at top of discussion thread
 - Pin threads
