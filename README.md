@@ -13,8 +13,11 @@ Report bugs or request a feature under the 'Issues' tab.
 Please try to match the style already present in the project.  
 This includes 2 spaces for indentation, and opening brackets on the same line as the block controller.
 
-Compression is performed by the YUI Compressor library. Use the following command:
-`java -jar yuicompressor-<version>.jar -o sgtfrog.user.js --line-break 3000 sgtfrog.dev.js`
+##### Versioning
+
+Major version updates (X+.0.0) when the script layout changes.
+Minor version updates (X.Y+.0) when a new feature is added.
+Patch version updates (X.Y.Z+) when a bug is fixed or feature adjusted.
 
 -- -- --
 
