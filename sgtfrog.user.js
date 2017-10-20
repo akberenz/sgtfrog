@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.0
+// @version      1.0.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1840,7 +1840,7 @@ giveaways = {
   },
   filters: {
     inject: function() {
-      if (!frogVars.lists.moreFilters.value || (location.pathname !== '/' && !~location.href.indexOf("/giveaways/"))) { return; }
+      if (!frogVars.lists.moreFilters.value || (location.pathname !== '/' && !~location.href.indexOf("/giveaways/search"))) { return; }
 
       var $filters = $("<div/>").addClass("notification notification--warning notification--margin-top is-hidden").css("padding-bottom", "10px"),
           $toggle = $("<a/>").addClass("is-clickable").html("<i class='fa fa-filter'></i>"),
@@ -2117,7 +2117,7 @@ threads = {
         var $data = $(data);
 
         loading.everyNew.commentPage($data);
-        
+
         $comments.append($data.find(".comments").last().children().get().reverse());
         $(".pagination__results").html($data.find(".pagination__results").html());
       });
