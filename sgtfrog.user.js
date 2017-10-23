@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.0.1
+// @version      1.1.0
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -113,6 +113,10 @@ var frogVars = {
   //Giveaway page related
   detail: {
     _name: "Giveaway Pages",
+    trainCars: {
+      key: "trainCars", value: GM_getValue("trainCars", 1), query: "Show a train extractor on linked giveaways?",
+      set: { type: "circle", options: ["Yes", "No"] }
+    },
     searchSame: {
       key: "searchSame", value: GM_getValue("searchSame", 1), query: "Show buttons to quickly search for similar giveaways?",
       set: { type: "circle", options: ["Yes", "No"] }
@@ -321,10 +325,48 @@ helpers = {
         && !~path.indexOf("/legal/")
         && !~path.indexOf("/stats/")
         && !~path.indexOf("/giveaways/new")
+        && !~path.indexOf("/giweaways/train")
         && !(~path.indexOf("/giveaway/") && !~path.indexOf("/entries"))
         && !helpers.pageSet.GAList()
         && !helpers.pageSet.CommentList());
     }
+  },
+  clonePage: function(url, applySkinCall) {
+    var $dark = $("style").detach(); //compatibility with dark theme
+    $("html").empty();
+
+    $.ajax({
+      method: "GET",
+      url: url
+    }).done(function(page) {
+      //clear copied page out
+      var head = page.substring(page.indexOf("<head>")+6, page.indexOf("</head>"))
+        .replace(/<script [\s\S]+?<\/script>/g, ""); //remove problematic scripts
+      $("<head/>").appendTo("html").append(head);
+      $("<body/>").appendTo("html").append(page.substring(page.indexOf("<body>")+6, page.indexOf("</body>")));
+      $dark.appendTo("html");
+
+      $(".sidebar__navigation").find("a[href='" + url + "']").parent()
+          .removeClass("is-selected").find("i").remove();
+
+      //pull latest site js
+      var jsIndex = page.indexOf("<script src=\"'https://cdn.steamgifts.com/js/minified");
+      $("head").append($(page.substring(jsIndex, page.indexOf("</script>", jsIndex))));
+
+      applySkinCall();
+
+      //after wiping the page we need to reapply relevant custom settings
+      window.setTimeout(function() {
+        settings.injectMenu(true);
+        sidebar.removeMyGA();
+        giveaways.injectNavSearch();
+
+        fixedElements.header();
+        fixedElements.sidebar();
+        fixedElements.footer();
+        $document.scroll();
+      }, 500);
+    });
   },
   listingPit: {
     cache: {
@@ -935,32 +977,11 @@ settings = {
     if (location.pathname === "/accoumt/settings/ribbit") {
       logging.info("Creating custom settings page");
 
-      var $dark = $("style").detach(); //compatibility with dark theme
-      $("html").empty();
-
       //copy an existing page to match layout
-      var usePage = "/account/settings/giveaways";
-
-      $.ajax({
-        method: "GET",
-        url: usePage
-      }).done(function(data) {
-        //clear copied page out
-        var head = data.substring(data.indexOf("<head>")+6, data.indexOf("</head>"))
-          .replace(/<script [\s\S]+?<\/script>/g, ""); //remove problematic scripts
-        $("<head/>").appendTo("html").append(head);
-        $("<body/>").appendTo("html").append(data.substring(data.indexOf("<body>")+6, data.indexOf("</body>")));
-        $dark.appendTo("html");
-
-        //pull latest site js
-        var jsIndex = data.indexOf("<script src=\"'https://cdn.steamgifts.com/js/minified");
-        $("head").append($(data.substring(jsIndex, data.indexOf("</script>", jsIndex))));
-
+      helpers.clonePage("/account/settings/giveaways", function() {
         //re-skin
         $(".page__heading__breadcrumbs").first().children("a").last()
           .html("Sgt Frog").attr("href", "/accoumt/settings/ribbit");
-        $(".sidebar__navigation").find("a[href='" + usePage + "']").parent()
-          .removeClass("is-selected").find("i").remove();
         $("title").html("Account - Settings - Ribbit");
 
         var $content = $("form").parent();
@@ -1001,17 +1022,6 @@ settings = {
           .appendTo($content);
 
         logging.debug("Creation complete");
-
-        //after wiping the page we need to reapply relevant custom settings
-        window.setTimeout(function() {
-          settings.injectMenu(true);
-          giveaways.injectNavSearch();
-
-          fixedElements.header();
-          fixedElements.sidebar();
-          fixedElements.footer();
-          $document.scroll();
-        }, 500);
       });
     }
   },
@@ -1085,7 +1095,7 @@ fixedElements = {
       var scrollAt = $document.scrollTop(),
           selfHeight = $sidewrap.height(),
           pickup = $(".featured__container").height() + 64,
-          footerStart = $(".footer__outer-wrap").offset().top;
+          footerStart = $(".footer__outer-wrap").length && $(".footer__outer-wrap").offset().top;
 
       if (((frogVars.general.fixedElms.value&1) == 0) && (offset + scrollAt + selfHeight) > footerStart) {
         //stop following at footer (unless both are floating)
@@ -1672,6 +1682,137 @@ giveaways = {
 
       $(".featured__summary").append($groupRow);
     });
+  },
+  train: {
+    injectPull: function() {
+      if (!frogVars.detail.trainCars.value || !~location.href.indexOf("/giveaway/")) { return; }
+
+      //only show if linked cars are detected
+      var $desc = $(".page__description");
+      if ($desc.find("[href*='/giveaway/']").length || $desc.find("[href*='sgtools.info/giveaways/']").length) {
+        $("<a/>").attr("href", "/giweaways/train?start=" + location.href.split("/")[4]).attr("title", "Extract train cars")
+          .html("<i class='fa fa-subway'></i>").appendTo($(".page__heading").first())
+      }
+    },
+    injectList: function() {
+      //sg redirects from invalid /giveaways links, so we fake it
+      if (!~location.href.indexOf("/giweaways/train")) { return; }
+
+      //rebuild page with table
+      var $table = $("<div/>").addClass("table"),
+          $tableHead = $("<div/>").addClass("table__heading").appendTo($table);
+          $tableRows = $("<div/>").addClass("table__rows").appendTo($table);
+
+      $tableHead.append($("<div/>").addClass("table__column--width-small text-center").html("Cart"))
+        .append($("<div/>").addClass("table__column--width-fill").html("Giveaway"))
+        .append($("<div/>").addClass("table__column--width-small text-center").html("Entries"))
+        .append($("<div/>").addClass("table__column--width-small text-center").html("Restrictions"));
+
+      //copy format from existing page
+      helpers.clonePage("/giveaways/entered", function() {
+        //re-skin
+        $("title").html("Giveaways - Train");
+        $(".page__heading__breadcrumbs").html("Giveaway <i class='fa fa-angle-right'></i> Train");
+
+        $(".table").replaceWith($table);
+        $(".pagination").remove();
+
+        loading.addSpinner($(".page__heading"));
+      });
+
+      //start traversing train
+      giveaways.train._bumper = null;
+      giveaways.train._visited = [];
+      var finalCallback = function() {
+        logging.info("Finished traversing train, found "+ giveaways.train._visited.length +" carts");
+        loading.removeSpinner();
+        $(".page__heading__breadcrumbs").prepend("<i class='fa fa-angle-right'></i>")
+          .prepend($("<a/>").attr("href", giveaways.train._bumper).html("Discussion"));
+      };
+
+      var start = helpers.fromQuery("start");
+      giveaways.train.extractFromPage(start, $table, finalCallback);
+    },
+    extractFromPage: function(code, $table, callback) {
+      if (~giveaways.train._visited.indexOf(code)) { return; }
+
+      $.ajax({
+        method: "GET",
+        url: "/giveaway/"+ code +"/"
+      }).done(function(data) {
+        var $data = $(data);
+
+        //make sure we didn't visit it from another thread during the ajax call
+        if (~giveaways.train._visited.indexOf(code)) { callback(); return; }
+
+        giveaways.train._visited.push(code);
+        giveaways.train.addToTable($table, $data, code);
+
+        var nextCars = [];
+        $.each($data.find(".page__description").find("a"), function(i, link) {
+          var to = $(link).attr("href"),
+              next = null;
+
+          if (~to.indexOf("/giveaway/")) {
+            next = to.replace(/.*?\/giveaway\/(\w{5})\/.*/, "$1");
+          }
+          if (~to.indexOf("sgtools.info/giveaways")) {
+            next = to.substring(to.lastIndexOf("/"));
+          }
+          if (~to.indexOf("/discussion/")) {
+            giveaways.train._bumper = to;
+          }
+
+          if (next !== null && !~giveaways.train._visited.indexOf(next)) { nextCars.push(next); }
+        });
+
+        var endurance = nextCars.length,
+            wearDown = function() { if (--endurance == 0) { callback(); } };
+
+        if (nextCars.length) {
+          for(var i=0; i<nextCars.length; i++) {
+            giveaways.train.extractFromPage(nextCars[i], $table, wearDown);
+          }
+        } else {
+          callback();
+        }
+      });
+    },
+    addToTable: function($table, $ga, code) {
+      var $row = $("<div/>").addClass("table__row-inner-wrap"),
+          $image = $ga.find(".global__image-outer-wrap").find("img"),
+          gameName = $ga.find(".featured__heading__medium").text(),
+          $endBlock = $ga.find(".featured__column").first().find("[data-timestamp]"),
+          entries = $ga.find(".live__entry-count").text(),
+          $lvlBadge = $ga.find(".featured__column--contributor-level").removeClass("featured__column--contributor-level").addClass("giveaway__column--contributor-level"),
+          $regionBadge = $ga.find(".featured__column--region-restricted").removeClass("featured__column--region-restricted").addClass("giveaway__column--region-restricted");
+
+      if ($lvlBadge.hasClass("featured__column--contributor-level--positive")) {
+        $lvlBadge.removeClass("featured__column--contributor-level--positive").addClass("giveaway__column--contributor-level--positive");
+      } else {
+        $lvlBadge.removeClass("featured__column--contributor-level--negative").addClass("giveaway__column--contributor-level--negative");
+      }
+
+      //build table columns
+      $row.append($("<div/>").addClass("table__column--width-small text-center")
+                    .append($("<span/>").addClass("table__column__rank").html(giveaways.train._visited.length +".")));
+      if ($image.length) {
+        var imageUrl = $image.attr("src").replace(/header_292x136/, "capsule_184x69");
+        $row.append($("<div/>").append($("<a/>").addClass("table_image_thumbnail").attr("href", "/giveaway/"+ code +"/")
+                                      .css("background-image", "url("+ imageUrl +")")));
+      } else {
+        $row.append($("<div/>").append($("<div/>").addClass("table_image_thumbnail_missing").attr("href", "/giveaway/"+ code +"/")
+                                      .html("<i class='fa fa-picture-o'></i>")));
+      }
+      $row.append($("<div/>").addClass("table__column--width-fill")
+                    .append($("<p/>").append($("<a/>").addClass("table__column__heading").attr("href", "/giveaway/"+ code +"/").html(gameName)))
+                    .append($("<p/>").append($endBlock).append(" remaining")));
+      $row.append($("<div/>").addClass("table__column--width-small text-center").html(entries));
+      $row.append($("<div/>").addClass("table__column--width-small text-center")
+                    .html($("<div/>").addClass("giveaway__columns").css("justify-content", "space-around").append($regionBadge).append($lvlBadge)));
+
+      $table.append($("<div/>").addClass("table__row-outer-wrap").append($row));
+    }
   },
   continueHiding: function(force) {
     if (!~location.href.indexOf("/giveaway/")) { return; }
@@ -2671,6 +2812,9 @@ pointless = {
     giveaways.injectEndDate();
     giveaways.expandedGroups();
     giveaways.continueHiding();
+
+    giveaways.train.injectPull();
+    giveaways.train.injectList();
 
     sidebar.removeMyGA();
     sidebar.injectSGTools();

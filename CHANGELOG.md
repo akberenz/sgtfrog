@@ -59,7 +59,7 @@
 - Much needed bug fixes
 - Fixes to changes in native site layout
 
-### since Version 1.0.0
+### since Version 1.0.1
 - Rewrote settings page to look more natural
 - Choice of discussions to show in sidebar
 - Reverse comment threads (continuous loading and standard)
@@ -72,3 +72,6 @@
 - Quick link to winners page from completed giveaways
 - Aggregated style tags to avoid dozens of additions on page
 - Bug fixes
+
+### since Version 1.1.0
+- Giveaway train extractor
