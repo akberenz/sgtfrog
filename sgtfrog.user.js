@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.1.0
+// @version      1.1.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1781,6 +1781,7 @@ giveaways = {
     addToTable: function($table, $ga, code) {
       var $row = $("<div/>").addClass("table__row-inner-wrap"),
           $image = $ga.find(".global__image-outer-wrap").find("img"),
+          hidden = !$ga.find(".featured__giveaway__hide").length;
           gameName = $ga.find(".featured__heading__medium").text(),
           $endBlock = $ga.find(".featured__column").first().find("[data-timestamp]"),
           entries = $ga.find(".live__entry-count").text(),
@@ -1810,6 +1811,8 @@ giveaways = {
       $row.append($("<div/>").addClass("table__column--width-small text-center").html(entries));
       $row.append($("<div/>").addClass("table__column--width-small text-center")
                     .html($("<div/>").addClass("giveaway__columns").css("justify-content", "space-around").append($regionBadge).append($lvlBadge)));
+
+      if (hidden) { $row.addClass("is-faded"); }
 
       $table.append($("<div/>").addClass("table__row-outer-wrap").append($row));
     }
