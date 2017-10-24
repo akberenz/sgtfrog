@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.1.1
+// @version      1.1.2
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -18,7 +18,9 @@
 
 (function() {
 
-var $document = $(document);
+var $document = $(document),
+    $window = $(window);
+
 if ($(".nav__sits").length) {
   console.warn("[RIBBIT] User is not logged in, cannot run script.");
   throw new Error("No lilypad.");
@@ -1169,26 +1171,27 @@ loading = {
 
     var inload = false;
     $document.on("scroll", function() {
-      var nearEdge = ($document.scrollTop() + $(window).height()) / $document.height();
-      if (nearEdge >= .90 && !inload) {
+      if (($document.scrollTop() + $window.height() + 400) >= $document.height() && !inload) {
         inload = true;
         page++;
 
         var loc = location.href;
         if (~loc.indexOf("?")) {
-          loc = loc.replace(/page=\d+?&?/, ""); //keep other params
+          loc = loc.replace(/&?page=\d+?&?/, ""); //keep other params
         } else {
-          if (location.pathname.length == 1) { loc += "/giveaways"; }
-          loc += "/search?";
+          if (location.pathname.length == 1) { loc += "giveaways/"; }
+          loc += "search?";
         }
 
         loading.addSpinner($(".giveaway__row-outer-wrap").last());
         logging.info("Loading next page: "+ page);
         logging.debug("Giveaway: "+ loc +"&page="+ page);
 
+        var nextPage = (loc +"&page="+ page);
+
         $.ajax({
           method: 'GET',
-          url: loc + "&page=" + page
+          url: nextPage
         }).done(function(data) {
           var $data = $(data);
           loading.everyNew.giveawayPage($data);
@@ -1232,6 +1235,8 @@ loading = {
               document.body.appendChild(script).removeChild(script);
             });
           });
+
+          window.history.pushState({}, "Page "+ page, nextPage);
         });
       }
     });
@@ -1275,8 +1280,7 @@ loading = {
 
     var inload = false;
     $document.on("scroll", function() {
-      var nearEdge = ($document.scrollTop() + $(window).height()) / $document.height();
-      if (nearEdge >= 0.90 && !inload) {
+      if (($document.scrollTop() + $window.height() + 400) >= $document.height() && !inload) {
         inload = true;
 
         if ((frogVars.threads.reversed.value && page-- > 1)
@@ -1287,7 +1291,7 @@ loading = {
           }
 
           if (~loc.indexOf("?")) {
-            loc = loc.replace(/page=\d+?&?/, ""); //keep other params
+            loc = loc.replace(/&?page=\d+?&?/, ""); //keep other params
           } else {
             loc += "/search?";
           }
@@ -1296,9 +1300,11 @@ loading = {
           logging.info("Loading next page: "+ page +"/"+ lastPage);
           logging.debug("Comment: "+ loc +"&page="+ page);
 
+          var nextPage = loc +"&page="+ page;
+
           $.ajax({
             method: 'GET',
-            url: loc +"&page="+ page
+            url: nextPage
           }).done(function(data) {
             var $data = $(data);
             loading.everyNew.commentPage($data);
@@ -1318,6 +1324,8 @@ loading = {
 
             inload = false;
             loading.removeSpinner();
+
+            window.history.pushState({}, "Page "+ page, nextPage);
           });
         }
       }
@@ -1332,14 +1340,13 @@ loading = {
 
     var inload = false;
     $document.on("scroll", function() {
-      var nearEdge = ($document.scrollTop() + $(window).height()) / $document.height();
-      if (nearEdge >= .90 && !inload) {
+      if (($document.scrollTop() + $window.height() + 400) >= $document.height() && !inload) {
         inload = true;
         page++;
 
         var loc = location.href;
         if (~loc.indexOf("?")) {
-          loc = loc.replace(/page=\d+?&?/, ""); //keep other params
+          loc = loc.replace(/&?page=\d+?&?/, ""); //keep other params
         } else {
           loc += "/search?";
         }
@@ -1348,9 +1355,11 @@ loading = {
         logging.info("Loading next page: "+ page);
         logging.debug("Table: "+ loc +"&page="+ page);
 
+        var nextPage = loc +"&page="+ page;
+
         $.ajax({
           method: 'GET',
-          url: loc +"&page="+ page
+          url: nextPage
         }).done(function(data) {
           var $data = $(data);
           loading.everyNew.generalPage($data);
@@ -1377,6 +1386,8 @@ loading = {
 
           inload = false;
           loading.removeSpinner();
+
+          window.history.pushState({}, "Page "+ page, nextPage);
         }).fail(function() {
           loading.removeSpinner();
         });

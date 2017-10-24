@@ -73,6 +73,7 @@
 - Aggregated style tags to avoid dozens of additions on page
 - Bug fixes
 
-### since Version 1.1.1
+### since Version 1.1.2
 - Giveaway train extractor
 - Extractor marks hidden games
+- Improvements to navigation with continuous loading
