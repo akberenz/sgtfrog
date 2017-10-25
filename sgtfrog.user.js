@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.1.2
+// @version      1.1.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1179,7 +1179,12 @@ loading = {
         if (~loc.indexOf("?")) {
           loc = loc.replace(/&?page=\d+?&?/, ""); //keep other params
         } else {
-          if (location.pathname.length == 1) { loc += "giveaways/"; }
+          if (location.pathname.length == 1) {
+            loc += "giveaways/";
+          } else {
+            loc += "/";
+          }
+
           loc += "search?";
         }
 
