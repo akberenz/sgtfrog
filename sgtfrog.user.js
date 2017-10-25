@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.1.3
+// @version      1.2.0
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -223,6 +223,10 @@ var frogVars = {
           set: { type: "circle", options: ["None", "Basic", "Detailed"] }
         }
       }
+    },
+    tagBackup: { 
+      key: "tagBackup", value: null, query: "Backup Tags",
+      set: { type: "action", options: ["Import", "Export"], actions: [function(){profiles.tagImport()}, function(){profiles.tagExport()}] }
     }
   }
 };
@@ -473,6 +477,9 @@ helpers = {
         case "number": case "text":
           $field = helpers.settings.makeText(number, isSub, setting, details);
           break;
+        case "action":
+          $field = helpers.settings.makeAction(number, isSub, setting, details);
+          break;
         case "none":
           $field = helpers.settings.makeEmpty(number, isSub, setting, details);
           break;
@@ -582,6 +589,18 @@ helpers = {
 
       var $desc = $("<div/>").addClass("form__input-description").html(details.set.about);
       return helpers.settings.makeLabel(number, details.query, isSub).append($indent.append($desc));
+    },
+    makeAction: function(number, isSub, setting, details) {
+      var $act = $("<div/>");
+      
+      for(var i=0; i<details.set.options.length; i++) {
+        var val = details.set.options[i],
+            go = details.set.actions[i];
+            
+        $act.append($("<div/>").addClass("form__checkbox").append($("<a/>").html(val).on("click", go)));
+      }
+      
+      return helpers.settings.makeLabel(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($act));
     },
     makeEmpty: function(number, isSub, setting, details) {
       return helpers.settings.makeLabel(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($("<div/>")));
@@ -2785,6 +2804,50 @@ profiles = {
           $div.html("<a>"+ ielm + (frogTags[tagKey][tagTarget] || "Add Tag") +"</a>");
         });
       }).insertAfter((isHover? ".hover-panel__outer-wrap ":"") + ".featured__heading__medium");
+  },
+  tagImport: function() {
+    var $upload = $("#tagImport");
+    if (!$upload.length) {
+      $upload = $("<input/>").attr("id", "tagImport").attr("type", "file").on("change", function(ev) {
+        var file = ev.target.files[0];
+        
+        if (file) {
+          var reader = new FileReader();
+          reader.onload = function(content) {
+            var importRead = JSON.parse(content.target.result);
+            if (importRead.users) {
+              GM_setValue("userTags", JSON.stringify($.extend(frogTags.users, importRead.users)));
+            }
+            if (importRead.groups) {
+              GM_getValue("groupTags", JSON.stringify($.extend(frogTags.groups, importRead.groups)));
+            }
+            
+            //NOTE - low priority (not main function), should not use 'alert' method
+            alert("Import completed!");
+            logging.info("Data imported");
+          };
+          
+          reader.readAsText(file, "UTF-8");
+        }
+      });
+    }
+    
+    //NOTE - low priority (not main function), but should replace 'confirm' method at some point
+    if (confirm("This will override any existing tags, continue?")) {
+      $("body").append($upload);
+      $upload.click();
+    }
+  },
+  tagExport: function() {
+    var download = document.createElement("a");
+    download.download = "SGT-frog-tags";
+    download.href = window.URL.createObjectURL(new Blob([JSON.stringify(frogTags)], { type: 'application/json' }));
+    
+    document.body.appendChild(download);
+    download.click();
+    document.body.removeChild(download);
+    
+    logging.info("Data exported");
   }
 };
 pointless = {
