@@ -15,9 +15,9 @@ This includes 2 spaces for indentation, and opening brackets on the same line as
 
 ##### Versioning
 
-Major version updates (X+.0.0) when the script layout changes.
-Minor version updates (X.Y+.0) when a new feature is added.
-Patch version updates (X.Y.Z+) when a bug is fixed or feature adjusted.
+Major version updates (X+.0.0) when the script layout changes.  
+Minor version updates (X.Y+.0) when a new feature is added.  
+Patch version updates (X.Y.Z+) when a bug is fixed or feature adjusted.  
 
 -- -- --
 
