@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.2.0
+// @version      1.2.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -224,7 +224,7 @@ var frogVars = {
         }
       }
     },
-    tagBackup: { 
+    tagBackup: {
       key: "tagBackup", value: null, query: "Backup Tags",
       set: { type: "action", options: ["Import", "Export"], actions: [function(){profiles.tagImport()}, function(){profiles.tagExport()}] }
     }
@@ -279,7 +279,7 @@ var frogStatic = {
 };
 
 // Functions //
-var  dbgLevel = frogVars.script.debugging.sub.dbgConsole.value,
+var dbgLevel = frogVars.script.debugging.sub.dbgConsole.value,
 logging = {
   debug: function(message) {
     if (dbgLevel < 1) {
@@ -592,14 +592,14 @@ helpers = {
     },
     makeAction: function(number, isSub, setting, details) {
       var $act = $("<div/>");
-      
+
       for(var i=0; i<details.set.options.length; i++) {
         var val = details.set.options[i],
             go = details.set.actions[i];
-            
+
         $act.append($("<div/>").addClass("form__checkbox").append($("<a/>").html(val).on("click", go)));
       }
-      
+
       return helpers.settings.makeLabel(number, details.query, isSub).append($("<div/>").addClass("form__row__indent").append($act));
     },
     makeEmpty: function(number, isSub, setting, details) {
@@ -640,26 +640,31 @@ helpers = {
             seconds = Math.floor((new Date() - new Date(epoch*1000)) / 1000);
 
         var interval = Math.floor(seconds / 31622400);
-        if (interval > 1) {
+        if (interval >= 1) {
           show = interval + " year";
         } else {
           interval = Math.floor(seconds / 2678400);
-          if (interval > 1) {
+          if (interval >= 1) {
             show = interval + " month";
           } else {
-            interval = Math.floor(seconds / 86400);
+            interval = Math.floor(seconds / 604800);
             if (interval >= 1) {
-              show = interval + " day";
+              show = interval + " week";
             } else {
-              interval = Math.floor(seconds / 3600);
+              interval = Math.floor(seconds / 86400);
               if (interval >= 1) {
-                show = interval + " hour";
+                show = interval + " day";
               } else {
-                interval = Math.floor(seconds / 60);
+                interval = Math.floor(seconds / 3600);
                 if (interval >= 1) {
-                  show = interval + " minute";
+                  show = interval + " hour";
                 } else {
-                  show = seconds + " second";
+                  interval = Math.floor(seconds / 60);
+                  if (interval >= 1) {
+                    show = interval + " minute";
+                  } else {
+                    show = seconds + " second";
+                  }
                 }
               }
             }
@@ -2810,7 +2815,7 @@ profiles = {
     if (!$upload.length) {
       $upload = $("<input/>").attr("id", "tagImport").attr("type", "file").on("change", function(ev) {
         var file = ev.target.files[0];
-        
+
         if (file) {
           var reader = new FileReader();
           reader.onload = function(content) {
@@ -2821,17 +2826,17 @@ profiles = {
             if (importRead.groups) {
               GM_getValue("groupTags", JSON.stringify($.extend(frogTags.groups, importRead.groups)));
             }
-            
+
             //NOTE - low priority (not main function), should not use 'alert' method
             alert("Import completed!");
             logging.info("Data imported");
           };
-          
+
           reader.readAsText(file, "UTF-8");
         }
       });
     }
-    
+
     //NOTE - low priority (not main function), but should replace 'confirm' method at some point
     if (confirm("This will override any existing tags, continue?")) {
       $("body").append($upload);
@@ -2842,11 +2847,11 @@ profiles = {
     var download = document.createElement("a");
     download.download = "SGT-frog-tags";
     download.href = window.URL.createObjectURL(new Blob([JSON.stringify(frogTags)], { type: 'application/json' }));
-    
+
     document.body.appendChild(download);
     download.click();
     document.body.removeChild(download);
-    
+
     logging.info("Data exported");
   }
 };
