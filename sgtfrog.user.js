@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.2.1
+// @version      1.2.2
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1810,9 +1810,12 @@ giveaways = {
             wearDown = function() { if (--endurance == 0) { callback(); } };
 
         if (nextCars.length) {
-          for(var i=0; i<nextCars.length; i++) {
-            giveaways.train.extractFromPage(nextCars[i], $table, wearDown);
-          }
+          //slow down loading a bit so we don't hit the site too hard on long trains
+          setTimeout(function() {
+            for(var i=0; i<nextCars.length; i++) {
+              giveaways.train.extractFromPage(nextCars[i], $table, wearDown);
+            }
+          }, 200);
         } else {
           callback();
         }
