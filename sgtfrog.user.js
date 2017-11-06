@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.2.2
+// @version      1.2.3
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1576,7 +1576,8 @@ giveaways = {
           var $gaLink = $doc.find("a[href='"+ wish +"']");
           if (!$gaLink.length) { return; }
 
-          var $gaRow = $gaLink.parents(".giveaway__summary").find(".giveaway__column--width-fill");
+          var $gaRow = $gaLink.parents(".giveaway__summary").find(".giveaway__columns--badges").children().first();
+          if (!$gaRow.length) { $gaRow = $gaLink.parents(".giveaway__summary").find(".giveaway__column--width-fill"); }
           if (!$gaRow.length) {
             $gaRow = $doc.find(".featured__column--width-fill");
             $badge.addClass("featured__column");
@@ -1594,7 +1595,8 @@ giveaways = {
         var $created = $(created);
         var timing = $created.html();
         if (~timing.indexOf("second") || ~timing.indexOf("minute")) {
-          var $gaRow = $created.parents(".giveaway__summary").find(".giveaway__column--width-fill")
+          var $gaRow = $created.parents(".giveaway__summary").find(".giveaway__columns--badges").children().first();
+          if (!$gaRow.length) { $gaRow = $created.parents(".giveaway__summary").find(".giveaway__column--width-fill"); }
           if (!$gaRow.length) {
             $gaRow = $doc.find(".featured__column--width-fill");
             $badge.addClass("featured__column");

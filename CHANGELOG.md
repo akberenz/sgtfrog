@@ -78,7 +78,8 @@
 - Extractor marks hidden games
 - Improvements to navigation with continuous loading
 
-### since Version 1.2.2
+### since Version 1.2.3
 - Import/export tags
 - Improve edit time wording
 - Slowed train extraction speed to impact the site less
+- Fixes to badge injection when using grid layout
