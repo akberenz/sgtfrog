@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.2.4
+// @version      1.2.5
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1671,9 +1671,14 @@ giveaways = {
         if (!~copies.indexOf("P")) { wins = copies.replace(/\D+/g, ''); }
         if (+wins > +entries) { wins = entries; }
 
-        var $winLink = $("<a/>").attr("href", $ga.find(".giveaway__heading__name").attr("href") +"/winners")
-                        .html("<i class='fa fa-trophy'></i> <span>" + Intl.NumberFormat().format(wins) +" winner"+ (+wins>1? "s":"") +"</span>");
-        $ga.find(".giveaway__links").append($winLink);
+        var gaCode = $ga.find(".giveaway__heading__name").attr("href"),
+            $winLink = $("<a/>");
+
+        if (gaCode) {
+          $winLink = $winLink.attr("href", gaCode +"/winners");
+        }
+
+        $ga.find(".giveaway__links").append($winLink.html("<i class='fa fa-trophy'></i> <span>" + Intl.NumberFormat().format(wins) +" winner"+ (+wins>1? "s":"") +"</span>"));
       }
     });
   },

@@ -78,7 +78,7 @@
 - Extractor marks hidden games
 - Improvements to navigation with continuous loading
 
-### since Version 1.2.4
+### since Version 1.2.5
 - Import/export tags
 - Improve edit time wording
 - Slowed train extraction speed to impact the site less
