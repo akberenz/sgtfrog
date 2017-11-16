@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.2.3
+// @version      1.2.4
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1663,7 +1663,7 @@ giveaways = {
       var $ga = $(ga);
 
       //only affect completed GA's
-      if ($ga.find(".giveaway__column--positive,.giveaway__column--negative").length) {
+      if ($ga.find(".giveaway__column--positive,.giveaway__column--negative,.fa-question-circle").length) {
         var wins = 1,
             copies = $ga.find('.giveaway__heading__thin').first().html(),
             entries = $ga.find(".giveaway__links").find("span").first().html().replace(/\D+/g, '');
