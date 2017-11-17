@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.2.5
+// @version      1.2.6
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1752,6 +1752,7 @@ giveaways = {
 
       $tableHead.append($("<div/>").addClass("table__column--width-small text-center").html("Cart"))
         .append($("<div/>").addClass("table__column--width-fill").html("Giveaway"))
+        .append($("<div/>").addClass("table__column--width-small text-center").html("Entry Cost"))
         .append($("<div/>").addClass("table__column--width-small text-center").html("Entries"))
         .append($("<div/>").addClass("table__column--width-small text-center").html("Restrictions"));
 
@@ -1764,7 +1765,10 @@ giveaways = {
         $(".table").replaceWith($table);
         $(".pagination").remove();
 
-        loading.addSpinner($(".page__heading"));
+        var $heading = $(".page__heading")
+        $heading.after($("<div/>").addClass("page__heading__train-count text-center").html("0 / 0"));
+
+        loading.addSpinner($heading);
       });
 
       //start traversing train
@@ -1773,12 +1777,17 @@ giveaways = {
       var finalCallback = function() {
         logging.info("Finished traversing train, found "+ giveaways.train._visited.length +" carts");
         loading.removeSpinner();
+        $(".page__heading__train-count").remove();
+
         $(".page__heading__breadcrumbs").prepend("<i class='fa fa-angle-right'></i>")
           .prepend($("<a/>").attr("href", giveaways.train._bumper).html("Discussion"));
       };
 
       var start = helpers.fromQuery("start");
       giveaways.train.extractFromPage(start, $table, finalCallback);
+    },
+    count: function(plus) {
+      $(".page__heading__train-count").html(giveaways.train._visited.length +" / "+ (giveaways.train._visited.length+plus));
     },
     extractFromPage: function(code, $table, callback) {
       if (~giveaways.train._visited.indexOf(code)) { return; }
@@ -1803,9 +1812,10 @@ giveaways = {
           if (~to.indexOf("/giveaway/")) {
             next = to.replace(/.*?\/giveaway\/(\w{5})\/.*/, "$1");
           }
+          /* TODO - better handling of "gates"
           if (~to.indexOf("sgtools.info/giveaways")) {
             next = to.substring(to.lastIndexOf("/"));
-          }
+          }*/
           if (~to.indexOf("/discussion/")) {
             giveaways.train._bumper = to;
           }
@@ -1814,9 +1824,14 @@ giveaways = {
         });
 
         var endurance = nextCars.length,
-            wearDown = function() { if (--endurance == 0) { callback(); } };
+            wearDown = function() {
+              if (--endurance == 0) { callback(); }
+              giveaways.train.count(endurance);
+            };
 
         if (nextCars.length) {
+          giveaways.train.count(nextCars.length);
+
           //slow down loading a bit so we don't hit the site too hard on long trains
           setTimeout(function() {
             for(var i=0; i<nextCars.length; i++) {
@@ -1830,13 +1845,23 @@ giveaways = {
     },
     addToTable: function($table, $ga, code) {
       var $row = $("<div/>").addClass("table__row-inner-wrap"),
-          $image = $ga.find(".global__image-outer-wrap").find("img"),
-          hidden = !$ga.find(".featured__giveaway__hide").length;
+          hidden = !$ga.find(".featured__giveaway__hide").length,
           gameName = $ga.find(".featured__heading__medium").text(),
-          $endBlock = $ga.find(".featured__column").first().find("[data-timestamp]"),
+          costs = $ga.find(".featured__heading__small").last().text(),
+          copies = $ga.find(".featured__heading__small").first().text();
           entries = $ga.find(".live__entry-count").text(),
+          entered = !!$ga.find(".sidebar__entry-delete").not(".is-hidden").length,
+          $image = $ga.find(".global__image-outer-wrap").find("img"),
+          $endBlock = $ga.find(".featured__column").first().find("[data-timestamp]"),
           $lvlBadge = $ga.find(".featured__column--contributor-level").removeClass("featured__column--contributor-level").addClass("giveaway__column--contributor-level"),
           $regionBadge = $ga.find(".featured__column--region-restricted").removeClass("featured__column--region-restricted").addClass("giveaway__column--region-restricted");
+
+      if (copies == costs) { copies = ""; }
+
+      var entryToken = null;
+      if (entered) {
+        entryToken = $("<i class='fa fa-check-circle icon-green' title='Entered'></i>");
+      }
 
       if ($lvlBadge.hasClass("featured__column--contributor-level--positive")) {
         $lvlBadge.removeClass("featured__column--contributor-level--positive").addClass("giveaway__column--contributor-level--positive");
@@ -1856,8 +1881,9 @@ giveaways = {
                                       .html("<i class='fa fa-picture-o'></i>")));
       }
       $row.append($("<div/>").addClass("table__column--width-fill")
-                    .append($("<p/>").append($("<a/>").addClass("table__column__heading").attr("href", "/giveaway/"+ code +"/").html(gameName)))
+                    .append($("<p/>").append($("<a/>").addClass("table__column__heading").attr("href", "/giveaway/"+ code +"/").html(gameName +" "+ copies)))
                     .append($("<p/>").append($endBlock).append(" remaining")));
+      $row.append($("<div/>").addClass("table__column--width-small text-center").append($("<span/>").html(costs.replace(/[\(\)]/g, " "))).append(entryToken));
       $row.append($("<div/>").addClass("table__column--width-small text-center").html(entries));
       $row.append($("<div/>").addClass("table__column--width-small text-center")
                     .html($("<div/>").addClass("giveaway__columns").css("justify-content", "space-around").append($regionBadge).append($lvlBadge)));
