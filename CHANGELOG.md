@@ -78,7 +78,7 @@
 - Extractor marks hidden games
 - Improvements to navigation with continuous loading
 
-### since Version 1.2.7
+### since Version 1.2.8
 - Import/export tags
 - Improve edit time wording
 - Slowed train extraction speed to impact the site less
@@ -86,3 +86,4 @@
 - Fixes to badge injection when using grid layout
 - Fixes to GA winner link
 - Whitelist recolor to blue heart
+- Url resolution fix

@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.2.7
+// @version      1.2.8
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -343,7 +343,7 @@ helpers = {
 
     $.ajax({
       method: "GET",
-      url: url
+      url: "https://steamgifts.com"+ url
     }).done(function(page) {
       //clear copied page out
       var head = page.substring(page.indexOf("<head>")+6, page.indexOf("</head>"))
@@ -411,7 +411,7 @@ helpers = {
     callbackHell: function(url, page, elms, done) {
       $.ajax({
         method: "GET",
-        url: url + page
+        url: "https://steamgifts.com"+ url + page
       }).done(function(data) {
         var $data = $(data),
             last = $data.find(".pagination__navigation").children().last().attr('data-page-number');
@@ -1437,7 +1437,7 @@ loading = {
       //load a small page to pull current points from
       $.ajax({
         method: "GET",
-        url: "/about/brand-assets"
+        url: "https://steamgifts.com/about/brand-assets"
       }).done(function(data) {
         var $data = $(data);
 
@@ -1717,7 +1717,7 @@ giveaways = {
 
     $.ajax({
       method: "GET",
-      url: groupPage.join("/") + "/groups"
+      url: "https://steamgifts.com"+ groupPage.join("/") + "/groups"
     }).done(function(data) {
       var $data = $(data);
 
@@ -1794,7 +1794,7 @@ giveaways = {
 
       $.ajax({
         method: "GET",
-        url: "/giveaway/"+ code +"/"
+        url: "https://steamgifts.com/giveaway/"+ code +"/"
       }).done(function(data) {
         var $data = $(data);
 
@@ -2467,13 +2467,13 @@ threads = {
     loadFromSearch: function(pinId, pinTitle, failIfMissing) {
       $.ajax({
         method: "GET",
-        url: "/discussions/search?q="+ pinTitle
+        url: "https://steamgifts.com/discussions/search?q="+ pinTitle
       }).done(function(data) {
         if (!threads.pins.pullFromPage($(data), pinId) && !failIfMissing) {
           //thread has changed names - load discussion to pull new title, then pull from page (worst case)
           $.ajax({
             method: "GET",
-            url: "/discussion/"+ pinId +"/"
+            url: "https://steamgifts.com/discussion/"+ pinId +"/"
           }).done(function(data) {
             var newTitle = $(data).find(".page__heading__breadcrumbs").first().children("a").last().text();
 
