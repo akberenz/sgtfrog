@@ -87,3 +87,6 @@
 - Fixes to GA winner link
 - Whitelist recolor to blue heart
 - Url resolution fix (really, this time)
+
+### since Version 1.3.0
+- Widened grid to ensure all icons are in view
