@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.3.0
+// @version      1.3.1
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -1917,20 +1917,17 @@ giveaways = {
     if (!frogVars.detail.searchSame.value || !~location.href.indexOf("/giveaway/")) { return; }
 
     var $side = $(".sidebar__navigation").parent();
-    var $entry = $side.children("form");
-    if ($entry) {
-      if (!$entry.hasClass("sidebar__error")) {
-        $entry.css("background-image", "none").css("border", "none");
-      } else {
-        helpers.applyGradients($entry, "#f7edf1 0%, #e6d9de 100%");
-      }
-    }
+    var $placement = $side.find(".sidebar__entry-insert");
 
-    $("<div/>").addClass("sidebar__shortcut-inner-wrap")
-      .append($("<a/>").addClass("sidebar__entry-loading").css("max-width", ($entry.length>0? "33%":"100%")).html("<i class='fa fa-search'></i> Find Similar")
-             .attr("href", "/giveaways/search?q=" + $(".featured__heading__medium").html()))
-      .append($entry)
-      .appendTo($("<div/>").addClass("sidebar__shortcut-outer-wrap").prependTo($side))
+    var $search = $("<div/>").addClass("sidebar__shortcut-inner-wrap")
+                  .append($("<a/>").addClass("sidebar__entry-loading").html("<i class='fa fa-search'></i> Find Similar")
+                          .attr("href", "/giveaways/search?q=" + $(".featured__heading__medium").html()));
+
+    if ($placement.length) {
+      $search.insertAfter($side.find("form"))
+    } else {
+      $search.prependTo($side);
+    }
   },
   injectNavSearch: function() {
     if (!frogVars.general.searchNav.value) { return; }

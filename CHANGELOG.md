@@ -88,5 +88,6 @@
 - Whitelist recolor to blue heart
 - Url resolution fix (really, this time)
 
-### since Version 1.3.0
+### since Version 1.3.1
 - Widened grid to ensure all icons are in view
+- Adjust find similar display
