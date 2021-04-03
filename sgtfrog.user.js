@@ -349,7 +349,7 @@ helpers = {
     }).done(function(page) {
       //clear copied page out
       var head = page.substring(page.indexOf("<head>")+6, page.indexOf("</head>"))
-        .replace(/<script [\s\S]+?<\/script>/g, ""); //remove problematic scripts
+        .replace(/<script[\s\S]+?<\/script>/g, ""); //remove problematic scripts
       $("<head/>").appendTo("html").append(head);
       $("<body/>").appendTo("html").append(page.substring(page.indexOf("<body>")+6, page.indexOf("</body>")));
       $dark.appendTo("html");
