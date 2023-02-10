@@ -5,7 +5,7 @@
 // @description  SteamGifts.com user controlled enchancements
 // @icon         https://raw.githubusercontent.com/bberenz/sgtfrog/master/keroro.gif
 // @include      *://*.steamgifts.com/*
-// @version      1.3.2
+// @version      1.4
 // @downloadURL  https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.user.js
 // @updateURL    https://raw.githubusercontent.com/bberenz/sgtfrog/master/sgtfrog.meta.js
 // @require      https://code.jquery.com/jquery-1.12.3.min.js
@@ -160,6 +160,16 @@ var frogVars = {
       key: "pinning", value: GM_getValue("pinning", 1), query: "Allow discussions to be pinned?",
       set: { type: "circle", options: ["Yes", "No"] }
     },
+    blind: {
+      key: "blind", value: GM_getValue("blind", 1), query: "Allow hiding of discussions?",
+      set: { type: "circle", options: ["Yes", "No"], link: { label: "View Hidden Discussions", location: "/discussioms/hidden" } },
+      sub: {
+        showBlinds: {
+          key: "blindView", value: null, query: "",
+          set: { type: "action", options: ["View hidden discussions"], actions: [function(){ window.location = "/discussioms/hidden"; }] }
+        }
+      }
+    },
     formatting: {
       key: "formatting", value: GM_getValue("formatting", 1), query: "Show quick format buttons on comment box?",
       set: { type: "circle", options: ["Yes", "No"] }
@@ -238,7 +248,8 @@ var frogTags = {
 };
 var frogTracks = {
   discuss: JSON.parse(GM_getValue("tracks[discuss]", '{}')),
-  pins: JSON.parse(GM_getValue("tracks[pins]", '{}'))
+  pins: JSON.parse(GM_getValue("tracks[pins]", '{}')),
+  blinds: JSON.parse(GM_getValue("tracks[blinds]", '{}'))
 };
 var frogStatic = {
   filters: [
@@ -331,6 +342,7 @@ helpers = {
         && !~path.indexOf("/about/")
         && !~path.indexOf("/legal/")
         && !~path.indexOf("/stats/")
+        && !~path.indexOf("/discussioms/")
         && !~path.indexOf("/happy-holidays/")
         && !~path.indexOf("/giveaways/new")
         && !~path.indexOf("/giweaways/train")
@@ -1170,6 +1182,7 @@ loading = {
       users.profileHover($doc);
       users.tagging.show($doc);
       users.listIndication($doc);
+      threads.blinds.injectButton($doc);
     },
     commentPage: function($doc) {
       users.profileHover($doc);
@@ -2499,6 +2512,141 @@ threads = {
         loading.everyNew.generalPage($(".is-pinned").not(".is-local"));
       }
     }
+  },
+  blinds: {
+    injectButton: function($doc) {
+      if (!frogVars.threads.blind.value || !~location.pathname.indexOf("/discussions")) { return; }
+
+      $rows = $doc.find(".table__row-outer-wrap");
+      $.each($rows, function(i, row) {
+        var $row = $(row);
+        var $title = $row.find("h3").first(),
+            discuss = $title.find("a").attr("href").split("/")[2];
+
+        if (frogTracks.blinds[discuss]) {
+          //hidden, remove from page
+          $row.remove();
+          logging.debug("Keeping discussion '"+ discuss +"' hidden");
+        } else {
+          //add hide button
+          var $eye = $("<i/>").addClass("fa fa-eye-slash").attr("title", "Hide discussion"),
+              $blind = $("<div/>").addClass("is-clickable").html($eye)
+                        .on('click', function(evt) {
+                          logging.info("Setting discussion '"+ discuss +"' to hidden");
+
+                          frogTracks.blinds[discuss] = Date.now();
+                          $row.remove();
+
+                          //save blinds
+                          GM_setValue("tracks[blinds]", JSON.stringify(frogTracks.blinds));
+                        });
+
+          $row.find(".table__column--width-small").first().find(".table__column__secondary-link").first().after($blind);
+        }
+      });
+    },
+    injectList: function() {
+      //sg redirects from invalid /discussions links, so we fake it
+      if (!~location.href.indexOf("/discussioms/hidden")) { return; }
+
+      //rebuild page with table
+      var $table = $("<div/>").addClass("table"),
+          $tableHead = $("<div/>").addClass("table__heading").appendTo($table);
+          $tableRows = $("<div/>").addClass("table__rows").appendTo($table);
+
+      $tableHead.append($("<div/>").addClass("table__column--width-fill").html("Discussion"))
+        .append($("<div/>").addClass("table__column--width-small text-center").html("Added"))
+        .append($("<div/>").addClass("table__column--width-small text-center").html("Remove"));
+
+      //copy format from existing page
+      helpers.clonePage("/account/settings/giveaways/filters", function() {
+        //re-skin
+        $("title").html("Account - DiscussionsFilters");
+        $(".page__heading__breadcrumbs").html("Account <i class='fa fa-angle-right'></i> Discussions <i class='fa fa-angle-right'></i> Filters");
+
+        $(".table").replaceWith($table);
+        $(".pagination").remove();
+        $(".page__heading__button").remove();
+      });
+
+      var count = Object.keys(frogTracks.blinds).length;
+      if (count > 0) {
+        var $heading = $(".page__heading");
+        loading.addSpinner($heading);
+      }
+
+      var sequence = {}; //avoid race condition from ajax call
+      logging.debug("Listing "+ count +" hidden discussions");
+
+      Object.entries(frogTracks.blinds).sort(function(b1, b2) {
+        return b2[1] - b1[1];
+      }).forEach(function(entry, i) {
+        var discuss = entry[0],
+            added = entry[1];
+
+        $.ajax({
+          method: "GET",
+          url: urlBase +"/discussion/"+ discuss +"/"
+        }).done(function(data) {
+          var $data = $(data);
+          var $row = threads.blinds.buildRow($data, discuss, added);
+          sequence[i] = $row;
+
+          if (--count <= 0) {
+            threads.blinds.addToTable($table, sequence);
+          }
+        });
+      });
+    },
+    buildRow: function($disc, code, added) {
+      var $row = $("<div/>").addClass("table__row-inner-wrap"),
+          $wrap = $("<div/>").addClass("table__row-outer-wrap").append($row),
+          $breadcrumbs = $disc.find(".page__heading__breadcrumbs"),
+          discussName = $breadcrumbs.find("h1").text(),
+          category = $breadcrumbs.find(".fa-angle-right").first().next().text(),
+          $opp = $disc.find(".comment__parent").first(),
+          user = $opp.find(".comment__username").text(),
+          avaImg = $opp.find(".global__image-inner-wrap").first().attr("style"),
+          timestamp = $opp.find(".comment__actions").text();
+
+      var $removal = $("<div/>").addClass("table__remove-default is-clickable");
+      $removal.append($("<i/>").addClass("fa fa-times-circle icon-red")).append(" ")
+              .append($("<span>Remove</span>").addClass("table__column__secondary-link"))
+              .on("click", function(evt) {
+                $wrap.remove();
+
+                logging.info("No longer hiding "+ code);
+                delete frogTracks.blinds[code];
+                GM_setValue("tracks[blinds]", JSON.stringify(frogTracks.blinds));
+              });
+
+      //build table columns
+      var $dname = $("<a/>").addClass("table__column__heading").attr("href", "/discussion/"+ code +"/").html(discussName),
+          $metaname = $("<a/>").addClass("table__column__secondary-link").attr("href", "/user/"+ user).html(user),
+          $metacat = $("<a/>").addClass("table__column__secondary-link").attr("href", category.replace(" / ", "-")).html(category),
+          $meta = $("<p/>").append($metacat).append(" - "+ timestamp.replace("*", "") +"by ").append($metaname);
+
+      $row.append($("<div/>").append($("<a/>").addClass("table_image_avatar").attr("href", "/user/"+ user).attr("style", avaImg)));
+      $row.append($("<div/>").addClass("table__column--width-fill").append($dname).append($meta));
+      $row.append($("<div/>").addClass("table__column--width-small text-center").append(helpers.time.relative(added/1000) + " ago"));
+      $row.append($("<div/>").addClass("table__column--width-small text-center").append($removal));
+
+      return $wrap;
+    },
+    addToTable: function($table, sequence) {
+      Object.values(sequence).forEach(function ($row) {
+        $table.append($row);
+      });
+
+      loading.removeSpinner();
+
+      profiles._frame = null; //need to clear since we recreated the page
+      users.profileHover($document);
+      users.tagging.show($document);
+      users.tagging.injectEditor($(".featured__heading__medium").text());
+      users.listIndication($document);
+      users.listenForLists($(".featured__heading__medium").text());
+    }
   }
 },
 users = {
@@ -2951,6 +3099,8 @@ pointless = {
     threads.commentBox.injectEdit($document);
     threads.pins.injectButton();
     threads.pins.findPinned();
+    threads.blinds.injectButton($document);
+    threads.blinds.injectList();
 
     users.profileHover($document);
     users.tagging.show($document);

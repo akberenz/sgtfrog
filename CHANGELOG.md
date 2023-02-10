@@ -91,3 +91,6 @@
 ### since Version 1.3.1
 - Widened grid to ensure all icons are in view
 - Adjust find similar display
+
+### since version 1.4
+- Ability to hide discussions
